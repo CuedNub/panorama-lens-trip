@@ -1830,7 +1830,7 @@ const Engine = {
       var aktif = (s.warnaTema === w.kode) ? ' aktif' : '';
       return '<div class="warna-dot' + aktif + '" ' +
         'style="background:' + w.kode + '" ' +
-        'onclick="Engine.pilihWarna(\'' + w.kode + '\')"></div>';
+        'onclick="Engine.pilihWarna('' + w.kode + '')"></div>';
     }).join('');
 
     var tempatHtml = (s.tempatJemput || []).map(function(t, i) {
@@ -1990,8 +1990,8 @@ const Engine = {
     }).join('');
 
     var html =
-      '<form onsubmit="Engine.simpanMasterPaket(event,\'' +
-        (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
+      '<form onsubmit="Engine.simpanMasterPaket(event,'' +
+        (isEdit ? editId : '') + '')" oninput="Engine.tandaiDirty()">' +
         '<label>ID Paket</label>' +
         '<input type="text" value="' + id + '" readonly>' +
         '<label>Nama Paket *</label>' +
@@ -2081,8 +2081,8 @@ const Engine = {
     var id     = isEdit ? driver.id : Core.generateDriverId();
 
     var html =
-      '<form onsubmit="Engine.simpanMasterDriver(event,\'' +
-        (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
+      '<form onsubmit="Engine.simpanMasterDriver(event,'' +
+        (isEdit ? editId : '') + '')" oninput="Engine.tandaiDirty()">' +
         '<label>ID Driver</label>' +
         '<input type="text" value="' + id + '" readonly>' +
         '<label>Nama Driver *</label>' +
@@ -2169,8 +2169,8 @@ const Engine = {
     });
 
     var html =
-      '<form onsubmit="Engine.simpanMasterHotel(event,\'' +
-        (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
+      '<form onsubmit="Engine.simpanMasterHotel(event,'' +
+        (isEdit ? editId : '') + '')" oninput="Engine.tandaiDirty()">' +
         '<label>ID Hotel</label>' +
         '<input type="text" value="' + id + '" readonly>' +
         '<label>Nama Hotel *</label>' +
@@ -2266,8 +2266,8 @@ const Engine = {
     }
 
     var html =
-      '<form onsubmit="Engine.simpanMasterDestinasi(event,\'' +
-        (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
+      '<form onsubmit="Engine.simpanMasterDestinasi(event,'' +
+        (isEdit ? editId : '') + '')" oninput="Engine.tandaiDirty()">' +
         '<label>ID Destinasi</label>' +
         '<input type="text" value="' + id + '" readonly>' +
         '<label>Nama Destinasi *</label>' +
@@ -2282,8 +2282,8 @@ const Engine = {
         '<input type="text" id="fDestAktNama" placeholder="contoh: Sunrise">' +
         '<button type="button" class="btn-tambah" ' +
           'onclick="Engine.tambahAktivitas()">+ Tambah Aktivitas</button>' +
-        '<input type="hidden" id="fDestAktData" value="' +
-          JSON.stringify(aktList).replace(/'/g, '&#39;') + '">' +
+        '<input type="hidden" id="fDestAktData" value='' +
+          JSON.stringify(aktList).replace(/'/g, '&#39;') + ''>' +
         '<label>Status *</label>' +
         '<select id="fDestStatus" required>' +
           '<option value="Aktif"' + (isEdit && dest.status === 'Aktif' ? ' selected' : '') + '>Aktif</option>' +
@@ -2384,10 +2384,8 @@ const Engine = {
     var list = Core.getMasterDestinasi().filter(function(d) { return d.id !== id; });
     Core.saveMasterDestinasi(list);
     this.showHalaman('masterDestinasi');
-  }
+  },
 
-
-};
 // Daftarkan ke window
 window.Engine = Engine;
 

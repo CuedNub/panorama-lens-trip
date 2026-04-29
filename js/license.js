@@ -322,13 +322,9 @@ const License = {
       self.logTodayUsage();
 
       alert('Lisensi berhasil diaktifkan! (' + days + ' hari)');
-
-      self.hideLockscreen();
-
-      if (window.Engine) {
-        Engine.renderHeader();
-        Engine.init();
-      }
+      
+      // Reload page agar init fresh
+      window.location.reload();
     });
   },
 
@@ -388,39 +384,52 @@ const License = {
   // FORM INPUT LISENSI
   // ---------------------------------
   bukaFormInput() {
-    var modalEl = document.getElementById('modal');
-    if (!modalEl) return;
+    var existing = document.getElementById('licenseModal');
+    if (existing) existing.remove();
 
-    modalEl.innerHTML =
-      '<div class="modal-overlay" onclick="License.tutupFormInput()">' +
-        '<div class="modal-content" onclick="event.stopPropagation()">' +
-          '<div class="modal-header">' +
-            '<span>🔑 Aktivasi Lisensi</span>' +
-            '<button onclick="License.tutupFormInput()">✕</button>' +
-          '</div>' +
-          '<div class="modal-body">' +
-            '<label>Masukkan kode lisensi:</label>' +
-            '<input type="text" id="fLicenseCode" ' +
-              'placeholder="CM-XXXX-XXXX-XXXX" ' +
-              'style="text-transform:uppercase">' +
-            '<div class="info-paket" style="margin-top:10px">' +
-              '⚠️ Pastikan internet aktif saat aktivasi.' +
-            '</div>' +
-            '<button class="btn-simpan" onclick="License.submitLicense()">' +
-              'Aktivasi</button>' +
-          '</div>' +
+    var div = document.createElement('div');
+    div.id = 'licenseModal';
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;' +
+      'background:rgba(0,0,0,0.5);z-index:600;display:flex;' +
+      'align-items:center;justify-content:center;padding:20px';
+
+    div.innerHTML =
+      '<div style="background:#fff;border-radius:16px;width:100%;' +
+        'max-width:400px;overflow:hidden" onclick="event.stopPropagation()">' +
+        '<div style="display:flex;justify-content:space-between;' +
+          'align-items:center;padding:16px;border-bottom:1px solid #e0e0e0;' +
+          'font-weight:700;font-size:16px">' +
+          '<span>🔑 Aktivasi Lisensi</span>' +
+          '<button onclick="License.tutupFormInput()" style="background:none;' +
+            'border:none;font-size:20px;cursor:pointer">✕</button>' +
+        '</div>' +
+        '<div style="padding:16px">' +
+          '<label style="display:block;font-size:13px;font-weight:600;' +
+            'margin-bottom:4px">Masukkan kode lisensi:</label>' +
+          '<input type="text" id="fLicenseCode" ' +
+            'placeholder="CM-XXXX-XXXX-XXXX" ' +
+            'style="width:100%;padding:10px 12px;border:1px solid #e0e0e0;' +
+            'border-radius:8px;font-size:14px;text-transform:uppercase">' +
+          '<div style="background:#dcfce7;padding:10px 12px;' +
+            'border-radius:8px;font-size:13px;margin-top:10px">' +
+            '⚠️ Pastikan internet aktif saat aktivasi.</div>' +
+          '<button onclick="License.submitLicense()" style="width:100%;' +
+            'padding:12px;margin-top:16px;background:#16a34a;color:#fff;' +
+            'border:none;border-radius:8px;font-size:15px;font-weight:700;' +
+            'cursor:pointer">Aktivasi</button>' +
         '</div>' +
       '</div>';
 
-    modalEl.classList.add('aktif');
+    div.addEventListener('click', function(e) {
+      if (e.target === div) License.tutupFormInput();
+    });
+
+    document.body.appendChild(div);
   },
 
   tutupFormInput() {
-    var modalEl = document.getElementById('modal');
-    if (modalEl) {
-      modalEl.classList.remove('aktif');
-      modalEl.innerHTML = '';
-    }
+    var el = document.getElementById('licenseModal');
+    if (el) el.remove();
   },
 
   // ---------------------------------
@@ -532,9 +541,35 @@ const License = {
         'style="margin-top:12px">Generate</button>' +
       '<div id="hasilGenerate" style="margin-top:12px"></div>';
 
-    if (window.Engine) {
-      Engine.bukaModal('🔑 Admin Panel', html);
-    }
+    var existing = document.getElementById('adminModal');
+    if (existing) existing.remove();
+
+    var div = document.createElement('div');
+    div.id = 'adminModal';
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;' +
+      'background:rgba(0,0,0,0.5);z-index:600;display:flex;' +
+      'align-items:center;justify-content:center;padding:20px';
+
+    div.innerHTML =
+      '<div style="background:#fff;border-radius:16px;width:100%;' +
+        'max-width:400px;max-height:80vh;overflow-y:auto" ' +
+        'onclick="event.stopPropagation()">' +
+        '<div style="display:flex;justify-content:space-between;' +
+          'align-items:center;padding:16px;border-bottom:1px solid #e0e0e0;' +
+          'font-weight:700;font-size:16px;position:sticky;top:0;' +
+          'background:#fff;z-index:1">' +
+          '<span>🔑 Admin Panel</span>' +
+          '<button onclick="License.tutupAdmin()" style="background:none;' +
+            'border:none;font-size:20px;cursor:pointer">✕</button>' +
+        '</div>' +
+        '<div style="padding:16px">' + html + '</div>' +
+      '</div>';
+
+    div.addEventListener('click', function(e) {
+      if (e.target === div) License.tutupAdmin();
+    });
+
+    document.body.appendChild(div);
   },
 
   doGenerate() {
