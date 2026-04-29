@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Panorama Lens Trip</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div id="header"></div>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div id="sidebarOverlay" onclick="Engine.toggleSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar"></div>
+
+  <!-- BANNER BACKUP -->
+  <div id="bannerBackup"></div>
+
+  <!-- LOCKSCREEN LISENSI -->
+  <div id="licenseLockscreen">
+    <div class="lock-logo" onclick="License.handleLogoClick()">🌿</div>
+    <div class="lock-title" id="lockTitle">Panorama Lens Trip</div>
+    <div class="lock-msg" id="lockMsg">Lisensi Tidak Aktif</div>
+    <div>
+      <button class="lock-btn lock-btn-primary"
+        onclick="License.bukaFormInput()">🔑 Input Lisensi</button>
+      <button class="lock-btn lock-btn-secondary"
+        onclick="DataSync.exportData()">💾 Export Data</button>
+    </div>
+  </div>
+
+  <!-- KONTEN UTAMA -->
+  <div id="konten"></div>
+
+  <!-- MODAL -->
+  <div id="modal"></div>
+
+  <!-- POPUP UPDATE -->
+  <div id="updatePopup"></div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <div id="bottomNav"></div>
+
+  <!-- LOAD JS -->
+  <script src="js/core.js"></script>
+  <script src="js/license.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/itinerary.js"></script>
+  <script src="js/data_sync.js"></script>
+  <script src="js/app_update.js"></script>
+
+  <!-- INIT APP -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Apply tema dulu
+      if (window.Engine) {
+        Engine.applyTema();
+        Engine.renderHeader();
+      }
+
+      // Cek lisensi
+      if (window.License) {
+        var licenseOk = License.init();
+        if (!licenseOk) return;
+      }
+
+      // Init engine (full)
+      if (window.Engine) {
+        Engine.init();
+      }
+
+      // Init update checker
+      if (window.AppUpdate) {
+        AppUpdate.init();
+      }
+
+      // Cek backup reminder
+      if (window.DataSync) {
+        DataSync.cekReminder();
+      }
+    });
+  </script>
+
+</body>
+</html>
