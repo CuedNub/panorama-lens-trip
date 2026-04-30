@@ -16,13 +16,11 @@ const Engine = {
   state: {
     halamanAktif    : 'booking',
     sidebarAktif    : false,
-    filterBooking     : 'Semua',
-    filterArusKas     : 'Semua',
-    filterMaster      : {},
-    searchBooking     : '',
-    searchBookingDraft: '',
-    searchArusKas     : '',
-    searchArusKasDraft: '',
+    filterBooking   : 'Semua',
+    filterArusKas   : 'Semua',
+    filterMaster    : {},
+    searchBooking   : '',
+    searchArusKas   : '',
     bulanArusKas    : new Date().toISOString().substring(0, 7),
     expandedBooking : null,
     expandedArusKas : null,
@@ -221,10 +219,9 @@ const Engine = {
     konten.innerHTML =
       '<div class="halaman-booking">' +
         '<div class="search-bar">' +
-          '<input type="text" placeholder="Cari nama tamu / ID..." ' +
-          'value="' + this.state.searchBookingDraft + '" ' +
-          'oninput="Engine.setDraftSearchBooking(this.value)">' +
-          '<button type="button" onclick="Engine.applySearchBooking()">🔍</button>' +
+          '<input type="text" placeholder="🔍 Cari nama tamu / ID..." ' +
+          'value="' + this.state.searchBooking + '" ' +
+          'oninput="Engine.setSearchBooking(this.value)">' +
         '</div>' +
         '<div class="tabs">' + tabsHtml + '</div>' +
         '<div id="listBooking">' + cardsHtml + '</div>' +
@@ -406,12 +403,8 @@ const Engine = {
     this.showHalaman('booking');
   },
 
-  setDraftSearchBooking(v) {
-    this.state.searchBookingDraft = v;
-  },
-
-  applySearchBooking() {
-    this.state.searchBooking = this.state.searchBookingDraft;
+  setSearchBooking(v) {
+    this.state.searchBooking = v;
     this.showHalaman('booking');
   },
 
@@ -520,10 +513,9 @@ const Engine = {
           '</div>' +
         '</div>' +
         '<div class="search-bar">' +
-          '<input type="text" placeholder="Cari nama tamu / ID..." ' +
-          'value="' + this.state.searchArusKasDraft + '" ' +
-          'oninput="Engine.setDraftSearchArusKas(this.value)">' +
-          '<button type="button" onclick="Engine.applySearchArusKas()">🔍</button>' +
+          '<input type="text" placeholder="🔍 Cari nama tamu / ID..." ' +
+          'value="' + this.state.searchArusKas + '" ' +
+          'oninput="Engine.setSearchArusKas(this.value)">' +
         '</div>' +
         '<div class="tabs">' + tabsHtml + '</div>' +
         '<div id="listArusKas">' + cardsHtml + '</div>' +
@@ -612,12 +604,8 @@ const Engine = {
     this.showHalaman('arusKas');
   },
 
-  setDraftSearchArusKas(v) {
-    this.state.searchArusKasDraft = v;
-  },
-
-  applySearchArusKas() {
-    this.state.searchArusKas = this.state.searchArusKasDraft;
+  setSearchArusKas(v) {
+    this.state.searchArusKas = v;
     this.showHalaman('arusKas');
   },
 
@@ -1535,7 +1523,6 @@ const Engine = {
   // ---------------------------------
   renderMasterPaket(konten) {
     const filter = this.state.filterMaster.paket || 'Semua';
-    const searchInput = this.state.filterMaster.draftSearchPaket || '';
     const search = (this.state.filterMaster.searchPaket || '').toLowerCase();
     let data = Core.getMasterPaket();
 
@@ -1559,12 +1546,9 @@ const Engine = {
     }
 
     konten.innerHTML =
-      '<div class="search-bar">' +
-        '<input type="text" placeholder="Cari nama paket..." ' +
-        'value="' + searchInput + '" ' +
-        'oninput="Engine.setDraftSearchMaster(\'draftSearchPaket\',this.value)">' +
-        '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchPaket\',\'searchPaket\')">🔍</button>' +
-      '</div>' +
+      '<div class="search-bar"><input type="text" ' +
+        'placeholder="🔍 Cari nama paket..." value="' + search + '" ' +
+        'oninput="Engine.setSearchMaster(\'searchPaket\',this.value)"></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterPaket()">+</button>';
@@ -1597,7 +1581,6 @@ const Engine = {
   // ---------------------------------
   renderMasterDriver(konten) {
     const filter = this.state.filterMaster.driver || 'Semua';
-    const searchInput = this.state.filterMaster.draftSearchDriver || '';
     const search = (this.state.filterMaster.searchDriver || '').toLowerCase();
     let data = Core.getMasterDriver();
 
@@ -1620,12 +1603,9 @@ const Engine = {
     }
 
     konten.innerHTML =
-      '<div class="search-bar">' +
-        '<input type="text" placeholder="Cari nama driver..." ' +
-        'value="' + searchInput + '" ' +
-        'oninput="Engine.setDraftSearchMaster(\'draftSearchDriver\',this.value)">' +
-        '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchDriver\',\'searchDriver\')">🔍</button>' +
-      '</div>' +
+      '<div class="search-bar"><input type="text" ' +
+        'placeholder="🔍 Cari nama driver..." value="' + search + '" ' +
+        'oninput="Engine.setSearchMaster(\'searchDriver\',this.value)"></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterDriver()">+</button>';
@@ -1659,7 +1639,6 @@ const Engine = {
   // ---------------------------------
   renderMasterHotel(konten) {
     const filter = this.state.filterMaster.hotel || 'Semua';
-    const searchInput = this.state.filterMaster.draftSearchHotel || '';
     const search = (this.state.filterMaster.searchHotel || '').toLowerCase();
     let data = Core.getMasterHotel();
 
@@ -1681,12 +1660,9 @@ const Engine = {
     }
 
     konten.innerHTML =
-      '<div class="search-bar">' +
-        '<input type="text" placeholder="Cari nama hotel..." ' +
-        'value="' + searchInput + '" ' +
-        'oninput="Engine.setDraftSearchMaster(\'draftSearchHotel\',this.value)">' +
-        '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchHotel\',\'searchHotel\')">🔍</button>' +
-      '</div>' +
+      '<div class="search-bar"><input type="text" ' +
+        'placeholder="🔍 Cari nama hotel..." value="' + search + '" ' +
+        'oninput="Engine.setSearchMaster(\'searchHotel\',this.value)"></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterHotel()">+</button>';
@@ -1718,7 +1694,6 @@ const Engine = {
   // ---------------------------------
   renderMasterDestinasi(konten) {
     const filter = this.state.filterMaster.destinasi || 'Semua';
-    const searchInput = this.state.filterMaster.draftSearchDest || '';
     const search = (this.state.filterMaster.searchDest || '').toLowerCase();
     let data = Core.getMasterDestinasi();
 
@@ -1740,12 +1715,9 @@ const Engine = {
     }
 
     konten.innerHTML =
-      '<div class="search-bar">' +
-        '<input type="text" placeholder="Cari nama destinasi..." ' +
-        'value="' + searchInput + '" ' +
-        'oninput="Engine.setDraftSearchMaster(\'draftSearchDest\',this.value)">' +
-        '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchDest\',\'searchDest\')">🔍</button>' +
-      '</div>' +
+      '<div class="search-bar"><input type="text" ' +
+        'placeholder="🔍 Cari nama destinasi..." value="' + search + '" ' +
+        'oninput="Engine.setSearchMaster(\'searchDest\',this.value)"></div>' +
       '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterDestinasi()">+</button>';
@@ -1782,12 +1754,8 @@ const Engine = {
     this.showHalaman(this.state.halamanAktif);
   },
 
-  setDraftSearchMaster(key, val) {
+  setSearchMaster(key, val) {
     this.state.filterMaster[key] = val;
-  },
-
-  applySearchMaster(draftKey, searchKey) {
-    this.state.filterMaster[searchKey] = this.state.filterMaster[draftKey] || '';
     this.showHalaman(this.state.halamanAktif);
   },
 
