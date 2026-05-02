@@ -66,6 +66,26 @@
         AppUpdate.init();
       }
 
+      // Blok mode browser biasa, izinkan hanya mode app terinstal
+      var isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.indexOf('android-app://') === 0;
+
+      if (!isStandalone) {
+        document.body.innerHTML =
+          '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#f0fdf4;font-family:Arial,sans-serif">' +
+            '<div style="max-width:420px;width:100%;background:#ffffff;border:1px solid #dcfce7;border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center">' +
+              '<div style="font-size:46px;margin-bottom:12px">📲</div>' +
+              '<h2 style="margin:0 0 12px;color:#166534">Bukak liwat aplikasi wae</h2>' +
+              '<p style="margin:0 0 10px;color:#374151;line-height:1.6">Panorama Lens Trip mung isa digawe liwat aplikasi teka Cued.</p>' +
+              '<p style="margin:0 0 16px;color:#6b7280;font-size:14px;line-height:1.5">Spurane gik nana <b>waktu</b> karo <b>mood</b>.</p>' +
+              '<div style="font-size:13px;color:#6b7280;line-height:1.5">gawe mode browser.</div>' +
+            '</div>' +
+          '</div>';
+        return;
+      }
+
       // Apply tema dulu
       if (window.Engine) {
         Engine.applyTema();
