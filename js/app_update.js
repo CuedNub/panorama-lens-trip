@@ -20,7 +20,7 @@ const AppUpdate = {
 
     var self = this;
 
-    navigator.serviceWorker.register('sw.js')
+    navigator.serviceWorker.register('/panorama-lens-trip/sw.js')
       .then(function(reg) {
         self.swRegistration = reg;
 
@@ -59,7 +59,7 @@ const AppUpdate = {
   cekVersi() {
     var self = this;
 
-    fetch('version.json?t=' + Date.now())
+    fetch('/panorama-lens-trip/version.json?t=' + Date.now())
       .then(function(res) { return res.json(); })
       .then(function(data) {
         if (!data || !data.version) return;
