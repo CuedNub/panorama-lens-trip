@@ -1,6 +1,6 @@
 {
-  "name": "Panorama Lens Trip",
-  "short_name": "Panorama Lens Trip",
+  "name": "panorama-lens-trip",
+  "short_name": "panorama-lens-trip",
   "description": "Aplikasi manajemen agen travel - booking paket tour, hotel, driver, itinerary, dan arus kas",
   "start_url": "/panorama-lens-trip/",
   "scope": "/panorama-lens-trip/",
