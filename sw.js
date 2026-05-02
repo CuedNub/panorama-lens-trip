@@ -4,7 +4,7 @@
   FUNGSI  : Service worker, cache offline, handle update PWA
 */
 
-const CACHE_NAME = 'plt-cache-v1.1.2';
+const CACHE_NAME = 'plt-cache-v1.1.3';
 
 const ASSETS = [
   './',
@@ -46,6 +46,8 @@ self.addEventListener('activate', function(event) {
           return caches.delete(key);
         })
       );
+    }).then(function() {
+      return self.clients.claim();
     })
   );
 });
