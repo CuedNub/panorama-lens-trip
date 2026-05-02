@@ -1,4 +1,4 @@
 {
-  "version": "1.1.1",
-  "notes": "Perbaiki manifest dan path cache service worker agar PWA bisa diinstal"
+  "version": "1.1.2",
+  "notes": "Perbaiki link manifest di index.html agar PWA terbaca benar di GitHub Pages"
 }
