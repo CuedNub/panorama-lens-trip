@@ -1968,57 +1968,6 @@ const Engine = {
   // ---------------------------------
   // ITINERARY (tampilkan di modal)
   // ---------------------------------
-  bukaItinerary(bookingId) {
-    const b = Core.getBookingById(bookingId);
-    if (!b) return;
-
-    const destList = b.destinasi || [];
-    const tglMulai = new Date(b.tglBerangkat);
-
-    let isiHtml = '<div class="itinerary-view">' +
-      '<div class="itin-header">' +
-        b.id + ' — ' + b.namaTamu + '<br>' +
-        '📦 ' + (b.snapshotPaket ? b.snapshotPaket.nama : '-') + '<br>' +
-        '📅 ' + Core.formatTanggalPendek(b.tglBerangkat) + ' - ' +
-          Core.formatTanggalPendek(b.tglPulang) + '<br>' +
-        '👥 ' + b.jumlahPax + ' pax' +
-      '</div>';
-
-    destList.forEach(function(destNama, idx) {
-      const tglHari = new Date(tglMulai);
-      tglHari.setDate(tglHari.getDate() + idx);
-
-      const destinasi = Core.getMasterDestinasi().find(
-        function(d) { return d.nama === destNama; }
-      );
-      const aktivitas = destinasi ? (destinasi.aktivitas || []) : [];
-
-      isiHtml +=
-        '<div class="itin-hari">' +
-          '<div class="itin-hari-title">📅 Hari ' + (idx + 1) + ' — ' +
-            Core.formatTanggalPendek(tglHari.toISOString()) + '</div>' +
-          '<div class="itin-dest">📍 ' + destNama + '</div>';
-
-      if (aktivitas.length > 0) {
-        aktivitas.sort(function(a, c) {
-          return (a.waktu || '').localeCompare(c.waktu || '');
-        });
-        aktivitas.forEach(function(a) {
-          isiHtml += '<div class="itin-akt">' + a.waktu + ' ' +
-            a.nama + '</div>';
-        });
-      } else {
-        isiHtml += '<div class="itin-akt">Belum ada aktivitas</div>';
-      }
-
-      isiHtml += '</div>';
-    });
-
-    isiHtml += '</div>';
-
-    this.bukaModal('📍 Itinerary', isiHtml);
-  },
-
   // ---------------------------------
   // HALAMAN MASTER PAKET
   // ---------------------------------

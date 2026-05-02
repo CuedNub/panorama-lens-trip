@@ -24,7 +24,7 @@
 // KONSTANTA APLIKASI
 // ---------------------------------
 const APP_NAME_DEFAULT = 'Panorama Lens Trip';
-const APP_VERSION      = '1.1.6';
+const APP_VERSION      = '1.1.7';
 const PREFIX_DEFAULT   = 'PL';
 
 // ---------------------------------
