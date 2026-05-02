@@ -1,6 +1,6 @@
 # TESTING CHECKLIST
-VERSI INFO: 1.0.0
-UPDATE TERAKHIR: 2025-07-12
+VERSI INFO: 1.1.0
+UPDATE TERAKHIR: 2026-05-02
 
 ## LEVEL 1 — CEK SYNTAX
 Jalankan:
@@ -89,6 +89,17 @@ Cek:
 - [ ] hapus destinasi berhasil (jika tidak dipakai hotel)
 - [ ] hapus destinasi ditolak (jika masih dipakai hotel)
 - [ ] simpan profil berhasil
+
+## LEVEL 12 — CEK INSTALL PWA (GITHUB PAGES)
+- [ ] buka: https://cuednub.github.io/panorama-lens-trip/
+- [ ] tunggu beberapa detik lalu refresh 1x
+- [ ] cek apakah browser menampilkan opsi Install app / Tambahkan ke layar utama
+- [ ] setelah install, app harus terbuka sebagai standalone, bukan tab browser biasa
+- [ ] cek manifest live terbaca benar
+- [ ] cek sw.js live terbaca benar
+- [ ] cek ukuran icon PWA:
+  - [ ] icons/icon-192.png = 192x192
+  - [ ] icons/icon-512.png = 512x512
 
 ## LEVEL 12 — CEK SEBELUM PUSH
 - [ ] APP_VERSION sudah dinaikkan

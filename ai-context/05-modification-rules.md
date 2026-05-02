@@ -1,6 +1,6 @@
 # ATURAN MODIFIKASI
-VERSI INFO: 1.0.0
-UPDATE TERAKHIR: 2025-07-12
+VERSI INFO: 1.1.0
+UPDATE TERAKHIR: 2026-05-02
 
 ## FILE AKTIF (yang boleh dimodifikasi)
 - index.html
@@ -78,3 +78,17 @@ UPDATE TERAKHIR: 2025-07-12
 - migrasi data di Core.migrateBookingData()
 - CACHE_NAME di sw.js harus sinkron dengan APP_VERSION di core.js
 - version.json harus sinkron dengan APP_VERSION
+- konfigurasi PWA GitHub Pages jangan diubah sembarangan
+
+## ATURAN PWA GITHUB PAGES
+- App live di subfolder: /panorama-lens-trip/
+- manifest.json harus memakai:
+  - "start_url": "/panorama-lens-trip/"
+  - "scope": "/panorama-lens-trip/"
+  - "id": "/panorama-lens-trip/"
+- index.html harus memuat manifest dengan path yang benar
+- js/app_update.js harus memakai path GitHub Pages yang sesuai untuk sw.js dan version.json
+- icon PWA wajib valid:
+  - icons/icon-192.png = 192x192
+  - icons/icon-512.png = 512x512
+- Jika icon PWA rusak / 1x1, browser bisa membaca manifest tapi tetap gagal install

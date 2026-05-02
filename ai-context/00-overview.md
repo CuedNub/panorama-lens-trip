@@ -1,6 +1,6 @@
 # OVERVIEW APLIKASI
-VERSI INFO: 1.0.0
-UPDATE TERAKHIR: 2025-07-12
+VERSI INFO: 1.1.0
+UPDATE TERAKHIR: 2026-05-02
 
 ## NAMA APLIKASI
 Panorama Lens Trip
@@ -46,3 +46,5 @@ Aplikasi manajemen booking tour travel. Mengelola booking paket tour, hotel, dri
 - Harga paket tidak lagi di master paket, tapi diisi manual per booking
 - Tombol itinerary sudah dihapus dari card booking
 - js/itinerary.js masih ada di repo tapi tidak dipanggil dari UI
+- PWA sudah berhasil diperbaiki dan sekarang bisa diinstal dari GitHub Pages
+- Versi aplikasi saat ini: 1.1.6

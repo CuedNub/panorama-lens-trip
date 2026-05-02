@@ -64,3 +64,58 @@ UPDATE TERAKHIR: 2025-07-12
 - Sudah push ke GitHub
 
 ═══════════════════════════════════════
+
+## SESI 2 — 2026-05-02
+
+### Tujuan
+- Memperbaiki PWA agar aplikasi Panorama Lens Trip bisa diinstal dari GitHub Pages
+
+### File yang berubah
+- manifest.json
+- index.html
+- sw.js
+- js/app_update.js
+- js/core.js
+- version.json
+- icons/icon-192.png
+- icons/icon-512.png
+
+### Data source yang berubah
+- Tidak ada data source business logic yang berubah
+- Perubahan fokus ke konfigurasi PWA, cache, dan icon install
+
+### UI yang berubah
+- Tidak ada perubahan tampilan utama app
+- Perubahan ada pada proses install PWA dan nama app saat install
+
+### Penyebab utama masalah
+- Icon PWA `icon-192.png` dan `icon-512.png` masih berukuran 1x1
+- Konfigurasi manifest dan path PWA di GitHub Pages perlu dirapikan
+- Cache/service worker perlu dipaksa ambil versi baru
+
+### Perbaikan yang dilakukan
+- Rapikan manifest.json untuk GitHub Pages repo path `/panorama-lens-trip/`
+- Rapikan link manifest di index.html
+- Tambah `clients.claim()` di sw.js
+- Perbaiki path update PWA di js/app_update.js
+- Ganti icon PWA menjadi valid 192x192 dan 512x512
+- Sinkronkan APP_VERSION, CACHE_NAME, dan version.json
+- Naikkan versi bertahap sampai `1.1.6`
+
+### Testing yang dilakukan
+- Cek manifest live ✅
+- Cek sw.js live ✅
+- Cek assets live ✅
+- Cek ukuran icon PWA ✅
+- Test install ulang di browser ✅
+- Hasil akhir: app berhasil diinstal
+
+### Status
+- ✅ Selesai
+
+### Catatan
+- Penyebab paling besar ternyata icon PWA yang masih 1x1
+- Setelah icon valid dan cache versi dinaikkan, PWA berhasil diinstal
+- Versi final setelah perbaikan PWA: `1.1.6`
+
+═══════════════════════════════════════
