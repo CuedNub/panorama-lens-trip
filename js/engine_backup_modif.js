@@ -35,7 +35,6 @@ const Engine = {
   // INIT APLIKASI
   // ---------------------------------
   init() {
-    Core.migrateBookingData();
     this.applyTema();
     this.renderHeader();
     this.renderBottomNav();
@@ -112,6 +111,7 @@ const Engine = {
         '<a onclick="Engine.showHalaman(\'masterPaket\')">📦 Master Paket</a>' +
         '<a onclick="Engine.showHalaman(\'masterDriver\')">🚗 Master Driver</a>' +
         '<a onclick="Engine.showHalaman(\'masterHotel\')">🏨 Master Hotel</a>' +
+        '<a onclick="Engine.showHalaman(\'masterDestinasi\')">📍 Master Destinasi</a>' +
         '<a onclick="Engine.showHalaman(\'pengaturan\')">⚙️ Pengaturan</a>' +
         '<a onclick="Engine.showHalaman(\'tentang\')">ℹ️ Tentang</a>' +
         '<a onclick="Engine.bukaPanduan()">📖 Panduan</a>' +
@@ -189,6 +189,7 @@ const Engine = {
     else if (nama === 'masterPaket')     this.renderMasterPaket(konten);
     else if (nama === 'masterDriver')    this.renderMasterDriver(konten);
     else if (nama === 'masterHotel')     this.renderMasterHotel(konten);
+    else if (nama === 'masterDestinasi') this.renderMasterDestinasi(konten);
     else if (nama === 'pengaturan')      this.renderPengaturan(konten);
     else if (nama === 'tentang')         this.renderTentang(konten);
   },
@@ -249,16 +250,12 @@ const Engine = {
         .filter(a => a.kategori === 'booking hotel');
       if (hotels.length > 0) {
         hotels.forEach(h => {
-          sudahPesan.push({
-            label: 'Hotel ' +
-              (h.snapshotHotel ? h.snapshotHotel.nama : '') +
-              ' (' + (h.snapshotHotel ? h.snapshotHotel.destinasi : '') + ')',
-            id: h.id,
-            kategori: 'booking hotel'
-          });
+          sudahPesan.push('Hotel ' +
+            (h.snapshotHotel ? h.snapshotHotel.nama : '') +
+            ' (' + (h.snapshotHotel ? h.snapshotHotel.destinasi : '') + ')');
         });
       } else {
-        belumPesan.push({ label: 'Hotel', icon: '🏨', action: 'bukaFormHotel', bookingId: b.id });
+        belumPesan.push('Hotel');
       }
     }
 
@@ -267,15 +264,12 @@ const Engine = {
         .filter(a => a.kategori === 'sewa driver tour');
       if (dt.length > 0) {
         dt.forEach(d => {
-          sudahPesan.push({
-            label: (d.snapshotDriver ? d.snapshotDriver.nama : 'Driver Tour') +
-              ' - ' + (d.snapshotDriver ? d.snapshotDriver.kendaraan : ''),
-            id: d.id,
-            kategori: 'sewa driver tour'
-          });
+          sudahPesan.push(
+            (d.snapshotDriver ? d.snapshotDriver.nama : 'Driver Tour') +
+            ' - ' + (d.snapshotDriver ? d.snapshotDriver.kendaraan : ''));
         });
       } else {
-        belumPesan.push({ label: 'Driver Tour', icon: '🚗', action: 'bukaFormDriverTour', bookingId: b.id });
+        belumPesan.push('Driver Tour');
       }
     }
 
@@ -284,32 +278,20 @@ const Engine = {
         .filter(a => a.kategori === 'sewa driver jeep');
       if (dj.length > 0) {
         dj.forEach(d => {
-          sudahPesan.push({
-            label: (d.snapshotDriver ? d.snapshotDriver.nama : 'Driver Jeep') +
-              ' (Bromo)',
-            id: d.id,
-            kategori: 'sewa driver jeep'
-          });
+          sudahPesan.push(
+            (d.snapshotDriver ? d.snapshotDriver.nama : 'Driver Jeep') +
+            ' (Bromo)');
         });
       } else {
-        belumPesan.push({ label: 'Driver Jeep', icon: '🚙', action: 'bukaFormDriverJeep', bookingId: b.id });
+        belumPesan.push('Driver Jeep (Bromo)');
       }
     }
 
     if (adaBromo && b.fasilitasPiknik) {
       const pk = Core.getArusKasByBookingId(b.id)
         .filter(a => a.kategori === 'piknik bromo');
-      if (pk.length > 0) {
-        pk.forEach(p => {
-          sudahPesan.push({
-            label: 'Piknik Bromo',
-            id: p.id,
-            kategori: 'piknik bromo'
-          });
-        });
-      } else {
-        belumPesan.push({ label: 'Piknik Bromo', icon: '🏕️', action: 'bukaFormPiknik', bookingId: b.id });
-      }
+      if (pk.length > 0) sudahPesan.push('Piknik Bromo');
+      else belumPesan.push('Piknik Bromo');
     }
 
     const tglBerangkat = Core.formatTanggalPendek(b.tglBerangkat);
@@ -344,13 +326,7 @@ const Engine = {
           '<div class="checklist-group">' +
             '<div class="checklist-title">✅ Sudah pesan:</div>' +
             sudahPesan.map(s =>
-              '<div class="checklist-item">' +
-                '<span>• ' + s.label + '</span>' +
-                '<span class="checklist-actions">' +
-                  '<button class="btn-mini" onclick="event.stopPropagation();Engine.editArusKas(\'' + s.id + '\',\'' + s.kategori + '\')">✏️</button>' +
-                  '<button class="btn-mini btn-hapus" onclick="event.stopPropagation();Engine.hapusArusKas(\'' + s.id + '\')">🗑️</button>' +
-                '</span>' +
-              '</div>'
+              '<div class="checklist-item">• ' + s + '</div>'
             ).join('') +
           '</div>';
       }
@@ -360,10 +336,7 @@ const Engine = {
           '<div class="checklist-group warning">' +
             '<div class="checklist-title">⚠️ Belum pesan:</div>' +
             belumPesan.map(s =>
-              '<div class="checklist-item">' +
-                '<span>• ' + s.label + '</span>' +
-                '<button class="btn-mini btn-pesan" onclick="event.stopPropagation();Engine.' + s.action + '(\'' + s.bookingId + '\')">' + s.icon + ' Pesan</button>' +
-              '</div>'
+              '<div class="checklist-item">• ' + s + '</div>'
             ).join('') +
           '</div>';
       }
@@ -376,10 +349,32 @@ const Engine = {
               '\')">Ubah Status</button>' +
           '</div>' +
           '<div class="card-actions">' +
-            '<button onclick="Engine.editBooking(\'' + b.id +
-              '\')">✏️ Edit Booking</button>' +
-            '<button class="btn-hapus" onclick="Engine.hapusBooking(\'' + b.id +
-              '\')">🗑️ Hapus Booking</button>' +
+            '<button onclick="Engine.bukaFormHotel(\'' + b.id +
+              '\')">🏨 Hotel</button>' +
+            '<button onclick="Engine.bukaFormDriverTour(\'' + b.id +
+              '\')">🚗 Driver Tour</button>' +
+          '</div>';
+
+      if (adaBromo) {
+        html +=
+          '<div class="card-actions">' +
+            '<button onclick="Engine.bukaFormDriverJeep(\'' + b.id +
+              '\')">🚙 Driver Jeep</button>' +
+            '<button onclick="Engine.bukaFormPiknik(\'' + b.id +
+              '\')">🏕️ Piknik</button>' +
+          '</div>';
+      }
+
+      html +=
+          '<div class="card-actions">' +
+            '<button onclick="Engine.bukaItinerary(\'' + b.id +
+              '\')">📍 Itinerary</button>' +
+          '</div>' +
+          '<div class="card-actions">' +
+            '<button onclick="Itinerary.exportTamu(\'' + b.id +
+              '\')">📸 Itinerary Tamu</button>' +
+            '<button onclick="Itinerary.exportDriver(\'' + b.id +
+              '\')">📸 Itinerary Driver</button>' +
           '</div>' +
         '</div>';
     }
@@ -685,9 +680,14 @@ const Engine = {
 
     let opsiPaket = '<option value="">Pilih paket...</option>';
     pakets.forEach(p => {
-      opsiPaket += '<option value="' + p.id + '">' + p.nama + '</option>';
+      opsiPaket += '<option value="' + p.id + '">' + p.nama +
+        ' (' + Core.formatRupiah(p.harga) + ')</option>';
     });
-    opsiPaket += '<option value="__tambahBaru">➕ Tambah Paket Baru</option>';
+
+    let opsiTempat = '<option value="">Pilih tempat...</option>';
+    tempat.forEach(t => {
+      opsiTempat += '<option value="' + t + '">' + t + '</option>';
+    });
 
     const negaraList = ['Indonesia','Malaysia','Singapore','Thailand',
       'Vietnam','Philippines','Japan','South Korea','China','India',
@@ -725,10 +725,6 @@ const Engine = {
         '<div id="fOrderInfoPaket"></div>' +
         '<div id="fOrderFasilitas"></div>' +
 
-        '<label>Harga Paket *</label>' +
-        '<input type="number" id="fOrderHarga" min="0" required ' +
-          'placeholder="0" oninput="Engine.updateSisaBayarOrder()">' +
-
         '<label>Tanggal Berangkat *</label>' +
         '<input type="date" id="fOrderTglBerangkat" ' +
           'onchange="Engine.onTglBerangkatChange()" required>' +
@@ -750,6 +746,15 @@ const Engine = {
         '<input type="text" id="fOrderBandara" ' +
           'placeholder="contoh: Bandara Juanda, Surabaya" ' +
           'oninput="Engine.onBandaraChange()">' +
+
+        '<div class="section-divider">── Info Jemput (opsional) ──</div>' +
+
+        '<label>Tempat Jemput</label>' +
+        '<input type="text" id="fOrderTempatJemput" ' +
+          'placeholder="Otomatis terisi dari Bandara / Tempat Tiba">' +
+
+        '<label>Waktu Jemput</label>' +
+        '<input type="datetime-local" id="fOrderWaktuJemput">' +
 
         '<div class="section-divider">── Pembayaran ──</div>' +
 
@@ -798,14 +803,6 @@ const Engine = {
     const fas  = document.getElementById('fOrderFasilitas');
     if (!sel || !info || !fas) return;
 
-    if (sel.value === '__tambahBaru') {
-      sel.value = '';
-      info.innerHTML = '';
-      fas.innerHTML  = '';
-      Engine.bukaFormMasterPaketDariBooking();
-      return;
-    }
-
     const paket = Core.getMasterPaketById(sel.value);
     if (!paket) {
       info.innerHTML = '';
@@ -820,7 +817,8 @@ const Engine = {
       '<div class="info-paket">' +
         '📍 Destinasi: ' + destNames.join(', ') + '<br>' +
         '📅 Durasi: ' + paket.durHari + ' hari ' +
-          paket.durMalam + ' malam' +
+          paket.durMalam + ' malam<br>' +
+        '💰 Total Harga: ' + Core.formatRupiah(paket.harga) +
       '</div>';
 
     let fasHtml =
@@ -861,18 +859,21 @@ const Engine = {
   },
 
   updateSisaBayarOrder() {
-    const hargaInput = document.getElementById('fOrderHarga');
+    const paketSel   = document.getElementById('fOrderPaket');
     const bayarInput = document.getElementById('fOrderBayar');
     const sisaEl     = document.getElementById('fOrderSisaBayar');
     const statusEl   = document.getElementById('fOrderStatusBayar');
-    if (!hargaInput || !bayarInput || !sisaEl || !statusEl) return;
+    if (!paketSel || !bayarInput || !sisaEl || !statusEl) return;
 
-    const total = Number(hargaInput.value) || 0;
+    const paket = Core.getMasterPaketById(paketSel.value);
+    if (!paket) return;
+
+    const total = Number(paket.harga) || 0;
     const bayar = Number(bayarInput.value) || 0;
     const sisa  = total - bayar;
 
     let status = 'Belum bayar';
-    if (total > 0 && bayar >= total) status = 'Lunas';
+    if (bayar >= total) status = 'Lunas';
     else if (bayar > 0) status = 'DP';
 
     sisaEl.innerHTML = 'Sisa Bayar: ' + Core.formatRupiah(sisa);
@@ -885,11 +886,10 @@ const Engine = {
     const hp      = document.getElementById('fOrderHP').value.trim();
     const pax     = document.getElementById('fOrderPax').value;
     const paketId = document.getElementById('fOrderPaket').value;
-    const harga   = document.getElementById('fOrderHarga').value;
     const tglBrkt = document.getElementById('fOrderTglBerangkat').value;
     const bayar   = document.getElementById('fOrderBayar').value;
 
-    if (!nama || !hp || !pax || !paketId || !harga || !tglBrkt) {
+    if (!nama || !hp || !pax || !paketId || !tglBrkt) {
       alert('Lengkapi semua field bertanda *');
       return;
     }
@@ -920,12 +920,16 @@ const Engine = {
       negara          : negara,
       paketId         : paketId,
       destinasi       : paket.destinasi || [],
-      totalHarga      : Number(harga),
+      totalHarga      : Number(paket.harga),
       tglBerangkat    : tglBrkt,
       tglPulang       : document.getElementById('fOrderTglPulang').value || '',
       infoPenerbangan : document.getElementById('fOrderFlight').value || '',
       waktuTiba       : document.getElementById('fOrderTiba').value || '',
       bandara         : document.getElementById('fOrderBandara').value || '',
+      tempatJemput    : document.getElementById('fOrderTempatJemput')
+                          .value || '',
+      waktuJemput     : document.getElementById('fOrderWaktuJemput')
+                          .value || '',
       fasilitasHotel      : fasHotel ? fasHotel.checked : false,
       fasilitasDriverTour : fasDT ? fasDT.checked : false,
       fasilitasDriverJeep : adaBromo && fasDJ ? fasDJ.checked : false,
@@ -933,6 +937,7 @@ const Engine = {
       statusBooking   : 'Baru',
       snapshotPaket   : {
         nama      : paket.nama,
+        harga     : paket.harga,
         destinasi : paket.destinasi,
         durHari   : paket.durHari,
         durMalam  : paket.durMalam
@@ -1063,18 +1068,10 @@ const Engine = {
   },
 
   renderHotelField(nomor, destList) {
-    var allDest = Core.getDaftarDestinasi();
-    var merged = allDest.slice();
-    destList.forEach(function(d) {
-      if (merged.indexOf(d) < 0) merged.push(d);
-    });
-    merged.sort();
-
     let opsiDest = '<option value="">Pilih destinasi...</option>';
-    merged.forEach(d => {
+    destList.forEach(d => {
       opsiDest += '<option value="' + d + '">' + d + '</option>';
     });
-    opsiDest += '<option value="__tambahDest">➕ Tambah Destinasi Baru</option>';
 
     let hapusBtn = '';
     if (nomor > 1) {
@@ -1090,15 +1087,11 @@ const Engine = {
         'onchange="Engine.onHotelDestChange(' + nomor + ')" required>' +
         opsiDest +
       '</select>' +
-      '<input type="text" id="fHotelDestManual' + nomor + '" style="display:none" ' +
-        'placeholder="Ketik nama destinasi baru">' +
       '<label>Hotel *</label>' +
       '<select id="fHotelNama' + nomor + '" ' +
         'onchange="Engine.onHotelNamaChange(' + nomor + ')" required>' +
         '<option value="">Pilih hotel...</option>' +
       '</select>' +
-      '<input type="text" id="fHotelNamaManual' + nomor + '" style="display:none" ' +
-        'placeholder="Ketik nama hotel baru">' +
       '<label>Tanggal & Waktu Booking *</label>' +
       '<input type="datetime-local" id="fHotelTgl' + nomor + '" required>' +
       '<label>Biaya Booking</label>' +
@@ -1137,48 +1130,25 @@ const Engine = {
   },
 
   onHotelDestChange(nomor) {
-    const destSel = document.getElementById('fHotelDest' + nomor);
-    const destManual = document.getElementById('fHotelDestManual' + nomor);
+    const dest   = document.getElementById('fHotelDest' + nomor).value;
     const selHotel = document.getElementById('fHotelNama' + nomor);
-    const hotelManual = document.getElementById('fHotelNamaManual' + nomor);
-    if (!destSel || !selHotel) return;
+    if (!selHotel) return;
 
-    if (destSel.value === '__tambahDest') {
-      if (destManual) destManual.style.display = 'block';
-      selHotel.innerHTML = '<option value="">Pilih hotel...</option>';
-      if (hotelManual) hotelManual.style.display = 'none';
-      return;
-    }
-
-    if (destManual) { destManual.style.display = 'none'; destManual.value = ''; }
-
-    const dest = destSel.value;
     const hotels = Core.getMasterHotelByDestinasi(dest);
     let opsi = '<option value="">Pilih hotel...</option>';
     hotels.forEach(h => {
       opsi += '<option value="' + h.id + '">' + h.nama +
         ' (' + Core.formatRupiah(h.harga) + '/malam)</option>';
     });
-    opsi += '<option value="__tambahHotel">➕ Tambah Hotel Baru</option>';
     selHotel.innerHTML = opsi;
-    if (hotelManual) { hotelManual.style.display = 'none'; hotelManual.value = ''; }
   },
 
   onHotelNamaChange(nomor) {
-    const hotelSel = document.getElementById('fHotelNama' + nomor);
-    const hotelManual = document.getElementById('fHotelNamaManual' + nomor);
-    const biaya = document.getElementById('fHotelBiaya' + nomor);
-
-    if (hotelSel && hotelSel.value === '__tambahHotel') {
-      if (hotelManual) hotelManual.style.display = 'block';
-      if (biaya) biaya.value = '';
-      return;
-    }
-
-    if (hotelManual) { hotelManual.style.display = 'none'; hotelManual.value = ''; }
+    const hotelId = document.getElementById('fHotelNama' + nomor).value;
+    const biaya   = document.getElementById('fHotelBiaya' + nomor);
     if (!biaya) return;
 
-    const hotel = Core.getMasterHotelById(hotelSel.value);
+    const hotel = Core.getMasterHotelById(hotelId);
     if (hotel) biaya.value = hotel.harga || 0;
   },
 
@@ -1190,55 +1160,19 @@ const Engine = {
       const field = document.getElementById('hotelField' + i);
       if (!field) continue;
 
-      var destSel = document.getElementById('fHotelDest' + i).value;
-      var destManual = document.getElementById('fHotelDestManual' + i);
-      var htlSel  = document.getElementById('fHotelNama' + i).value;
-      var htlManual = document.getElementById('fHotelNamaManual' + i);
+      const dest   = document.getElementById('fHotelDest' + i).value;
+      const htlId  = document.getElementById('fHotelNama' + i).value;
       const tgl    = document.getElementById('fHotelTgl' + i).value;
       const biaya  = document.getElementById('fHotelBiaya' + i).value;
       const status = document.getElementById('fHotelStatus' + i).value;
       const ket    = document.getElementById('fHotelKet' + i).value.trim();
 
-      var dest = destSel;
-      if (destSel === '__tambahDest') {
-        if (!destManual || !destManual.value.trim()) {
-          alert('Ketik nama destinasi baru untuk Hotel ' + i);
-          return;
-        }
-        var hasilDest = Core.tambahDestinasi(destManual.value.trim());
-        if (!hasilDest.ok) { alert(hasilDest.msg); return; }
-        dest = hasilDest.nama;
-      }
-
-      var hotel = null;
-      var htlId = htlSel;
-      if (htlSel === '__tambahHotel') {
-        if (!htlManual || !htlManual.value.trim()) {
-          alert('Ketik nama hotel baru untuk Hotel ' + i);
-          return;
-        }
-        var namaHotelBaru = htlManual.value.trim();
-        var newHotelId = Core.generateHotelId();
-        hotel = {
-          id        : newHotelId,
-          nama      : namaHotelBaru,
-          destinasi : dest,
-          harga     : Number(biaya) || 0,
-          keterangan: ket || '',
-          status    : 'Aktif'
-        };
-        var hotelList = Core.getMasterHotel();
-        hotelList.push(hotel);
-        Core.saveMasterHotel(hotelList);
-        htlId = newHotelId;
-      } else {
-        hotel = Core.getMasterHotelById(htlId);
-      }
-
-      if (!dest || (!htlId || htlId === '__tambahHotel') || !tgl || !status) {
+      if (!dest || !htlId || !tgl || !status) {
         alert('Lengkapi semua field Hotel ' + i + ' bertanda *');
         return;
       }
+
+      const hotel = Core.getMasterHotelById(htlId);
 
       arusKas.push({
         id             : Core.generateArusKasId(),
@@ -1491,429 +1425,6 @@ const Engine = {
   },
 
   // ---------------------------------
-  // EDIT & HAPUS ARUS KAS
-  // ---------------------------------
-  editArusKas(arusKasId, kategori) {
-    const ak = Core.getArusKas().find(a => a.id === arusKasId);
-    if (!ak) { alert('Data tidak ditemukan'); return; }
-
-    if (kategori === 'booking hotel') {
-      this.editFormHotel(ak);
-    } else if (kategori === 'sewa driver tour') {
-      this.editFormDriverTour(ak);
-    } else if (kategori === 'sewa driver jeep') {
-      this.editFormDriverJeep(ak);
-    } else if (kategori === 'piknik bromo') {
-      this.editFormPiknik(ak);
-    }
-  },
-
-  editFormHotel(ak) {
-    const b = Core.getBookingById(ak.bookingId);
-    if (!b) return;
-    const destList = b.destinasi || [];
-
-    let opsiDest = '<option value="">Pilih destinasi...</option>';
-    destList.forEach(d => {
-      const sel = ak.snapshotHotel && ak.snapshotHotel.destinasi === d ? ' selected' : '';
-      opsiDest += '<option value="' + d + '"' + sel + '>' + d + '</option>';
-    });
-
-    const hotels = ak.snapshotHotel && ak.snapshotHotel.destinasi
-      ? Core.getMasterHotelByDestinasi(ak.snapshotHotel.destinasi) : [];
-    let opsiHotel = '<option value="">Pilih hotel...</option>';
-    hotels.forEach(h => {
-      const sel = ak.snapshotHotel && ak.snapshotHotel.nama === h.nama ? ' selected' : '';
-      opsiHotel += '<option value="' + h.id + '"' + sel + '>' + h.nama + '</option>';
-    });
-
-    const html =
-      '<form onsubmit="Engine.updateHotel(event,\'' + ak.id + '\',\'' + ak.bookingId + '\')">' +
-        '<label>Destinasi *</label>' +
-        '<select id="fHotelDest1" onchange="Engine.onHotelDestChange(1)" required>' + opsiDest + '</select>' +
-        '<label>Hotel *</label>' +
-        '<select id="fHotelNama1" onchange="Engine.onHotelChange(1)" required>' + opsiHotel + '</select>' +
-        '<label>Tanggal Check-in *</label>' +
-        '<input type="datetime-local" id="fHotelTgl1" required value="' + (ak.tanggal || '') + '">' +
-        '<label>Biaya *</label>' +
-        '<input type="number" id="fHotelBiaya1" min="0" value="' + (ak.jumlah || 0) + '">' +
-        '<label>Status Bayar *</label>' +
-        '<select id="fHotelStatus1" required>' +
-          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-        '</select>' +
-        '<label>Keterangan</label>' +
-        '<input type="text" id="fHotelKet1" value="' + (ak.keterangan || '') + '">' +
-        '<button type="submit" class="btn-simpan">Update Hotel</button>' +
-      '</form>';
-    this.bukaModal('✏️ Edit Hotel', html);
-  },
-
-  updateHotel(event, arusKasId, bookingId) {
-    event.preventDefault();
-    const dest   = document.getElementById('fHotelDest1').value;
-    const htlId  = document.getElementById('fHotelNama1').value;
-    const tgl    = document.getElementById('fHotelTgl1').value;
-    const biaya  = document.getElementById('fHotelBiaya1').value;
-    const status = document.getElementById('fHotelStatus1').value;
-    const ket    = document.getElementById('fHotelKet1').value.trim();
-
-    if (!dest || !htlId || !tgl || !status) {
-      alert('Lengkapi semua field bertanda *'); return;
-    }
-
-    const hotel = Core.getMasterHotelById(htlId);
-    const arusKas = Core.getArusKas();
-    const idx = arusKas.findIndex(a => a.id === arusKasId);
-    if (idx < 0) { alert('Data tidak ditemukan'); return; }
-
-    arusKas[idx].jumlah      = Number(biaya);
-    arusKas[idx].tanggal     = tgl;
-    arusKas[idx].keterangan  = ket || 'Booking hotel';
-    arusKas[idx].statusBayar = status;
-    arusKas[idx].snapshotHotel = hotel ? {
-      nama: hotel.nama, harga: hotel.harga, destinasi: hotel.destinasi
-    } : arusKas[idx].snapshotHotel;
-
-    Core.saveArusKas(arusKas);
-    this.tutupModal();
-    this.showHalaman('booking');
-  },
-
-  editFormDriverTour(ak) {
-    const drivers = Core.getMasterDriverByTipe('Driver Tour');
-    let opsiDriver = '<option value="">Pilih driver...</option>';
-    drivers.forEach(d => {
-      const sel = ak.snapshotDriver && ak.snapshotDriver.nama === d.nama ? ' selected' : '';
-      opsiDriver += '<option value="' + d.id + '"' + sel + '>' + d.nama + ' - ' + d.kendaraan + '</option>';
-    });
-
-    const html =
-      '<form onsubmit="Engine.updateDriver(event,\'' + ak.id + '\',\'' + ak.bookingId + '\',\'sewa driver tour\')">' +
-        '<label>Driver Tour *</label>' +
-        '<select id="fDriverTourId" required>' + opsiDriver + '</select>' +
-        '<label>Tanggal *</label>' +
-        '<input type="datetime-local" id="fDriverTourTgl" required value="' + (ak.tanggal || '') + '">' +
-        '<label>Biaya *</label>' +
-        '<input type="number" id="fDriverTourBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
-        '<label>Status Bayar *</label>' +
-        '<select id="fDriverTourStatus" required>' +
-          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-        '</select>' +
-        '<label>Keterangan</label>' +
-        '<input type="text" id="fDriverTourKet" value="' + (ak.keterangan || '') + '">' +
-        '<button type="submit" class="btn-simpan">Update Driver Tour</button>' +
-      '</form>';
-    this.bukaModal('✏️ Edit Driver Tour', html);
-  },
-
-  editFormDriverJeep(ak) {
-    const drivers = Core.getMasterDriverByTipe('Driver Jeep');
-    let opsiDriver = '<option value="">Pilih driver...</option>';
-    drivers.forEach(d => {
-      const sel = ak.snapshotDriver && ak.snapshotDriver.nama === d.nama ? ' selected' : '';
-      opsiDriver += '<option value="' + d.id + '"' + sel + '>' + d.nama + ' - ' + d.kendaraan + '</option>';
-    });
-
-    const html =
-      '<form onsubmit="Engine.updateDriver(event,\'' + ak.id + '\',\'' + ak.bookingId + '\',\'sewa driver jeep\')">' +
-        '<label>Driver Jeep *</label>' +
-        '<select id="fDriverJeepId" required>' + opsiDriver + '</select>' +
-        '<label>Tanggal *</label>' +
-        '<input type="datetime-local" id="fDriverJeepTgl" required value="' + (ak.tanggal || '') + '">' +
-        '<label>Biaya *</label>' +
-        '<input type="number" id="fDriverJeepBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
-        '<label>Status Bayar *</label>' +
-        '<select id="fDriverJeepStatus" required>' +
-          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-        '</select>' +
-        '<label>Keterangan</label>' +
-        '<input type="text" id="fDriverJeepKet" value="' + (ak.keterangan || '') + '">' +
-        '<button type="submit" class="btn-simpan">Update Driver Jeep</button>' +
-      '</form>';
-    this.bukaModal('✏️ Edit Driver Jeep', html);
-  },
-
-  updateDriver(event, arusKasId, bookingId, kategori) {
-    event.preventDefault();
-    const tipe   = kategori === 'sewa driver tour' ? 'Tour' : 'Jeep';
-    const drvId  = document.getElementById('fDriver' + tipe + 'Id').value;
-    const tgl    = document.getElementById('fDriver' + tipe + 'Tgl').value;
-    const biaya  = document.getElementById('fDriver' + tipe + 'Biaya').value;
-    const status = document.getElementById('fDriver' + tipe + 'Status').value;
-    const ket    = document.getElementById('fDriver' + tipe + 'Ket').value.trim();
-
-    if (!drvId || !tgl || !biaya || !status) {
-      alert('Lengkapi semua field bertanda *'); return;
-    }
-
-    const driver  = Core.getMasterDriverById(drvId);
-    const arusKas = Core.getArusKas();
-    const idx = arusKas.findIndex(a => a.id === arusKasId);
-    if (idx < 0) { alert('Data tidak ditemukan'); return; }
-
-    arusKas[idx].jumlah      = Number(biaya);
-    arusKas[idx].tanggal     = tgl;
-    arusKas[idx].keterangan  = ket || kategori;
-    arusKas[idx].statusBayar = status;
-    arusKas[idx].snapshotDriver = driver ? {
-      nama: driver.nama, noHP: driver.noHP, kendaraan: driver.kendaraan
-    } : arusKas[idx].snapshotDriver;
-
-    Core.saveArusKas(arusKas);
-    this.tutupModal();
-    this.showHalaman('booking');
-  },
-
-  editFormPiknik(ak) {
-    const html =
-      '<form onsubmit="Engine.updatePiknik(event,\'' + ak.id + '\',\'' + ak.bookingId + '\')">' +
-        '<label>Tanggal *</label>' +
-        '<input type="datetime-local" id="fPiknikTgl" required value="' + (ak.tanggal || '') + '">' +
-        '<label>Biaya *</label>' +
-        '<input type="number" id="fPiknikBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
-        '<label>Status Bayar *</label>' +
-        '<select id="fPiknikStatus" required>' +
-          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-        '</select>' +
-        '<label>Keterangan</label>' +
-        '<input type="text" id="fPiknikKet" value="' + (ak.keterangan || '') + '">' +
-        '<button type="submit" class="btn-simpan">Update Piknik</button>' +
-      '</form>';
-    this.bukaModal('✏️ Edit Piknik Bromo', html);
-  },
-
-  updatePiknik(event, arusKasId, bookingId) {
-    event.preventDefault();
-    const tgl    = document.getElementById('fPiknikTgl').value;
-    const biaya  = document.getElementById('fPiknikBiaya').value;
-    const status = document.getElementById('fPiknikStatus').value;
-    const ket    = document.getElementById('fPiknikKet').value.trim();
-
-    if (!tgl || !biaya || !status) {
-      alert('Lengkapi semua field bertanda *'); return;
-    }
-
-    const arusKas = Core.getArusKas();
-    const idx = arusKas.findIndex(a => a.id === arusKasId);
-    if (idx < 0) { alert('Data tidak ditemukan'); return; }
-
-    arusKas[idx].jumlah      = Number(biaya);
-    arusKas[idx].tanggal     = tgl;
-    arusKas[idx].keterangan  = ket || 'Piknik Bromo';
-    arusKas[idx].statusBayar = status;
-
-    Core.saveArusKas(arusKas);
-    this.tutupModal();
-    this.showHalaman('booking');
-  },
-
-  hapusArusKas(arusKasId) {
-    if (!confirm('Yakin hapus data ini?')) return;
-    const arusKas = Core.getArusKas().filter(a => a.id !== arusKasId);
-    Core.saveArusKas(arusKas);
-    this.showHalaman('booking');
-  },
-
-  // ---------------------------------
-  // EDIT & HAPUS BOOKING
-  // ---------------------------------
-  editBooking(bookingId) {
-    const b = Core.getBookingById(bookingId);
-    if (!b) return;
-
-    const pakets = Core.getMasterPaket();
-    let opsiPaket = '<option value="">Pilih paket...</option>';
-    pakets.forEach(p => {
-      const sel = p.id === b.paketId ? ' selected' : '';
-      opsiPaket += '<option value="' + p.id + '"' + sel + '>' + p.nama + '</option>';
-    });
-    opsiPaket += '<option value="__tambahBaru">➕ Tambah Paket Baru</option>';
-
-    const negaraList = ['Indonesia','Malaysia','Singapore','Thailand',
-      'Vietnam','Philippines','Japan','South Korea','China','India',
-      'Australia','USA','UK','Germany','France','Netherlands'];
-    const negaraDiList = negaraList.includes(b.negara);
-    let opsiNegara = negaraList.map(n =>
-      '<option value="' + n + '"' + (b.negara === n ? ' selected' : '') + '>' + n + '</option>'
-    ).join('');
-    opsiNegara += '<option value="__lainnya"' + (!negaraDiList ? ' selected' : '') + '>Lainnya (ketik manual)</option>';
-
-    const paket = Core.getMasterPaketById(b.paketId);
-    const destNames = paket ? (paket.destinasi || []) : (b.destinasi || []);
-    const adaBromo = Core.adaBromo(destNames);
-
-    let infoPaket = '';
-    if (paket) {
-      infoPaket = '<div class="info-paket">' +
-        '📍 Destinasi: ' + destNames.join(', ') + '<br>' +
-        '📅 Durasi: ' + paket.durHari + ' hari ' + paket.durMalam + ' malam' +
-      '</div>';
-    }
-
-    let fasHtml = '<div class="fasilitas-group">' +
-      '<label>Fasilitas untuk booking:</label>' +
-      '<label class="checkbox"><input type="checkbox" id="fFasHotel" ' +
-        (b.fasilitasHotel ? 'checked' : '') + '> Hotel</label>' +
-      '<label class="checkbox"><input type="checkbox" id="fFasDriverTour" ' +
-        (b.fasilitasDriverTour ? 'checked' : '') + '> Driver Tour</label>';
-    if (adaBromo) {
-      fasHtml +=
-        '<label class="checkbox"><input type="checkbox" id="fFasDriverJeep" ' +
-          (b.fasilitasDriverJeep ? 'checked' : '') + '> Driver Jeep (Bromo)</label>' +
-        '<label class="checkbox"><input type="checkbox" id="fFasPiknik" ' +
-          (b.fasilitasPiknik ? 'checked' : '') + '> Piknik Bromo</label>';
-    }
-    fasHtml += '</div>';
-
-    const html =
-      '<form onsubmit="Engine.updateBooking(event,\'' + bookingId + '\')" oninput="Engine.tandaiDirty()">' +
-        '<label>ID Booking</label>' +
-        '<input type="text" id="fOrderId" value="' + b.id + '" readonly>' +
-        '<label>Nama Tamu *</label>' +
-        '<input type="text" id="fOrderNama" required value="' + (b.namaTamu || '') + '">' +
-        '<label>No. HP / WA *</label>' +
-        '<input type="tel" id="fOrderHP" required value="' + (b.noHP || '') + '">' +
-        '<label>Jumlah Pax *</label>' +
-        '<input type="number" id="fOrderPax" min="1" required value="' + (b.jumlahPax || '') + '">' +
-        '<label>Negara</label>' +
-        '<select id="fOrderNegara" onchange="Engine.toggleNegaraManual()">' +
-          opsiNegara +
-        '</select>' +
-        '<input type="text" id="fOrderNegaraManual" style="display:' +
-          (!negaraDiList ? 'block' : 'none') + '" value="' +
-          (!negaraDiList ? (b.negara || '') : '') + '" placeholder="Ketik nama negara">' +
-        '<label>Paket Tour *</label>' +
-        '<select id="fOrderPaket" onchange="Engine.onPaketChange()" required>' +
-          opsiPaket +
-        '</select>' +
-        '<div id="fOrderInfoPaket">' + infoPaket + '</div>' +
-        '<div id="fOrderFasilitas">' + fasHtml + '</div>' +
-        '<label>Harga Paket *</label>' +
-        '<input type="number" id="fOrderHarga" min="0" required value="' +
-          (b.totalHarga || 0) + '" oninput="Engine.updateSisaBayarOrder()">' +
-        '<label>Tanggal Berangkat *</label>' +
-        '<input type="date" id="fOrderTglBerangkat" onchange="Engine.onTglBerangkatChange()" required value="' +
-          (b.tglBerangkat || '') + '">' +
-        '<label>Tanggal Pulang</label>' +
-        '<input type="date" id="fOrderTglPulang" value="' + (b.tglPulang || '') + '">' +
-        '<div class="section-divider">── Info Penerbangan (opsional) ──</div>' +
-        '<label>Info Penerbangan</label>' +
-        '<input type="text" id="fOrderFlight" value="' + (b.infoPenerbangan || '') + '">' +
-        '<label>Tanggal & Waktu Tiba</label>' +
-        '<input type="datetime-local" id="fOrderTiba" value="' + (b.waktuTiba || '') + '">' +
-        '<label>Bandara / Tempat Tiba</label>' +
-        '<input type="text" id="fOrderBandara" value="' + (b.bandara || '') + '">' +
-        '<div class="section-divider">── Pembayaran ──</div>' +
-        '<div id="fOrderSisaBayar"></div>' +
-        '<div id="fOrderStatusBayar"></div>' +
-        '<button type="submit" class="btn-simpan">Update Booking</button>' +
-      '</form>';
-
-    this.bukaModal('✏️ Edit Booking', html);
-
-    setTimeout(function() {
-      Engine.updateSisaBayarEdit(bookingId);
-    }, 100);
-  },
-
-  updateSisaBayarEdit(bookingId) {
-    const hargaInput = document.getElementById('fOrderHarga');
-    const sisaEl     = document.getElementById('fOrderSisaBayar');
-    const statusEl   = document.getElementById('fOrderStatusBayar');
-    if (!hargaInput || !sisaEl || !statusEl) return;
-
-    const keu   = Core.hitungKeuanganBooking(bookingId);
-    const total = Number(hargaInput.value) || 0;
-    const bayar = keu.masuk;
-    const sisa  = total - bayar;
-
-    let status = 'Belum bayar';
-    if (total > 0 && bayar >= total) status = 'Lunas';
-    else if (bayar > 0) status = 'DP';
-
-    sisaEl.innerHTML = 'Sudah dibayar: ' + Core.formatRupiah(bayar) + '<br>Sisa Bayar: ' + Core.formatRupiah(sisa);
-    statusEl.innerHTML = 'Status Bayar: ' + status;
-  },
-
-  updateBooking(event, bookingId) {
-    event.preventDefault();
-    const nama    = document.getElementById('fOrderNama').value.trim();
-    const hp      = document.getElementById('fOrderHP').value.trim();
-    const pax     = document.getElementById('fOrderPax').value;
-    const paketId = document.getElementById('fOrderPaket').value;
-    const harga   = document.getElementById('fOrderHarga').value;
-    const tglBrkt = document.getElementById('fOrderTglBerangkat').value;
-
-    if (!nama || !hp || !pax || !paketId || !harga || !tglBrkt) {
-      alert('Lengkapi semua field bertanda *');
-      return;
-    }
-
-    const paket = Core.getMasterPaketById(paketId);
-    if (!paket) { alert('Paket tidak ditemukan'); return; }
-
-    const negaraSel    = document.getElementById('fOrderNegara').value;
-    const negaraManual = document.getElementById('fOrderNegaraManual').value.trim();
-    const negara = negaraSel === '__lainnya' ? (negaraManual || 'Indonesia') : negaraSel;
-
-    const adaBromo = Core.adaBromo(paket.destinasi);
-
-    const fasHotel = document.getElementById('fFasHotel');
-    const fasDT    = document.getElementById('fFasDriverTour');
-    const fasDJ    = document.getElementById('fFasDriverJeep');
-    const fasPK    = document.getElementById('fFasPiknik');
-
-    const bookings = Core.getBooking();
-    const idx = bookings.findIndex(b => b.id === bookingId);
-    if (idx < 0) { alert('Booking tidak ditemukan'); return; }
-
-    bookings[idx].namaTamu        = nama;
-    bookings[idx].noHP            = hp;
-    bookings[idx].jumlahPax       = Number(pax);
-    bookings[idx].negara          = negara;
-    bookings[idx].paketId         = paketId;
-    bookings[idx].destinasi       = paket.destinasi || [];
-    bookings[idx].totalHarga      = Number(harga);
-    bookings[idx].tglBerangkat    = tglBrkt;
-    bookings[idx].tglPulang       = document.getElementById('fOrderTglPulang').value || '';
-    bookings[idx].infoPenerbangan = document.getElementById('fOrderFlight').value || '';
-    bookings[idx].waktuTiba       = document.getElementById('fOrderTiba').value || '';
-    bookings[idx].bandara         = document.getElementById('fOrderBandara').value || '';
-    bookings[idx].fasilitasHotel      = fasHotel ? fasHotel.checked : false;
-    bookings[idx].fasilitasDriverTour = fasDT ? fasDT.checked : false;
-    bookings[idx].fasilitasDriverJeep = adaBromo && fasDJ ? fasDJ.checked : false;
-    bookings[idx].fasilitasPiknik     = adaBromo && fasPK ? fasPK.checked : false;
-    bookings[idx].snapshotPaket   = {
-      nama      : paket.nama,
-      destinasi : paket.destinasi,
-      durHari   : paket.durHari,
-      durMalam  : paket.durMalam
-    };
-
-    Core.saveBooking(bookings);
-    this.state.dirtyForm = false;
-    this.tutupModal();
-    this.showHalaman('booking');
-  },
-
-  hapusBooking(bookingId) {
-    if (!confirm('Yakin hapus booking ini beserta semua data terkait (pembayaran, hotel, driver, piknik)?')) return;
-    const bookings = Core.getBooking().filter(b => b.id !== bookingId);
-    Core.saveBooking(bookings);
-    const arusKas = Core.getArusKas().filter(a => a.bookingId !== bookingId);
-    Core.saveArusKas(arusKas);
-    this.showHalaman('booking');
-  },
-
-  // ---------------------------------
   // FORM UBAH STATUS BOOKING
   // ---------------------------------
   bukaFormUbahStatus(bookingId) {
@@ -2023,12 +1534,21 @@ const Engine = {
   // HALAMAN MASTER PAKET
   // ---------------------------------
   renderMasterPaket(konten) {
+    const filter = this.state.filterMaster.paket || 'Semua';
     const searchInput = this.state.filterMaster.draftSearchPaket || '';
     const search = (this.state.filterMaster.searchPaket || '').toLowerCase();
     let data = Core.getMasterPaket();
 
+    if (filter !== 'Semua') data = data.filter(p => p.status === filter);
     if (search) data = data.filter(p =>
       p.nama.toLowerCase().includes(search));
+
+    const tabs = ['Semua','Aktif','Nonaktif'];
+    let tabsHtml = tabs.map(t =>
+      '<button class="tab' + (filter === t ? ' aktif' : '') +
+      '" onclick="Engine.setFilterMaster(\'paket\',\'' + t + '\')">' +
+        t + '</button>'
+    ).join('');
 
     let cardsHtml = '';
     if (data.length === 0) {
@@ -2045,6 +1565,7 @@ const Engine = {
         'oninput="Engine.setDraftSearchMaster(\'draftSearchPaket\',this.value)">' +
         '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchPaket\',\'searchPaket\')">🔍</button>' +
       '</div>' +
+      '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterPaket()">+</button>';
   },
@@ -2052,9 +1573,11 @@ const Engine = {
   renderCardMasterPaket(p) {
     const exp = this.state.filterMaster.expandPaket === p.id;
     let html = '<div class="card-master" onclick="Engine.toggleExpandMaster(\'expandPaket\',\'' + p.id + '\')">' +
-      '<div class="card-header"><span>' + p.id + '</span></div>' +
+      '<div class="card-header"><span>' + p.id + '</span>' +
+        '<span class="badge ' + (p.status === 'Aktif' ? 'badge-hijau' : 'badge-abu') + '">' + p.status + '</span></div>' +
       '<div class="card-info">' + p.nama + '<br>' +
-        '📅 ' + p.durHari + ' hari ' + p.durMalam + ' malam</div>';
+        '📅 ' + p.durHari + ' hari ' + p.durMalam + ' malam<br>' +
+        '👥 ' + p.pax + ' pax | 💰 ' + Core.formatRupiah(p.harga) + '</div>';
 
     if (exp) {
       html += '<div class="card-detail" onclick="event.stopPropagation()">' +
@@ -2193,6 +1716,64 @@ const Engine = {
   // ---------------------------------
   // HALAMAN MASTER DESTINASI
   // ---------------------------------
+  renderMasterDestinasi(konten) {
+    const filter = this.state.filterMaster.destinasi || 'Semua';
+    const searchInput = this.state.filterMaster.draftSearchDest || '';
+    const search = (this.state.filterMaster.searchDest || '').toLowerCase();
+    let data = Core.getMasterDestinasi();
+
+    if (filter !== 'Semua') data = data.filter(d => d.status === filter);
+    if (search) data = data.filter(d => d.nama.toLowerCase().includes(search));
+
+    const tabs = ['Semua','Aktif','Nonaktif'];
+    let tabsHtml = tabs.map(t =>
+      '<button class="tab' + (filter === t ? ' aktif' : '') +
+      '" onclick="Engine.setFilterMaster(\'destinasi\',\'' + t + '\')">' + t + '</button>'
+    ).join('');
+
+    let cardsHtml = '';
+    if (data.length === 0) {
+      cardsHtml = '<div class="empty-state"><div class="empty-icon">📍</div>' +
+        '<p>Belum ada data destinasi.</p></div>';
+    } else {
+      cardsHtml = data.map(d => this.renderCardMasterDestinasi(d)).join('');
+    }
+
+    konten.innerHTML =
+      '<div class="search-bar">' +
+        '<input type="text" placeholder="Cari nama destinasi..." ' +
+        'value="' + searchInput + '" ' +
+        'oninput="Engine.setDraftSearchMaster(\'draftSearchDest\',this.value)">' +
+        '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchDest\',\'searchDest\')">🔍</button>' +
+      '</div>' +
+      '<div class="tabs">' + tabsHtml + '</div>' +
+      '<div id="listMaster">' + cardsHtml + '</div>' +
+      '<button class="fab" onclick="Engine.bukaFormMasterDestinasi()">+</button>';
+  },
+
+  renderCardMasterDestinasi(d) {
+    const exp = this.state.filterMaster.expandDest === d.id;
+    const akt = d.aktivitas || [];
+    let html = '<div class="card-master" onclick="Engine.toggleExpandMaster(\'expandDest\',\'' + d.id + '\')">' +
+      '<div class="card-header"><span>' + d.id + '</span>' +
+        '<span class="badge ' + (d.status === 'Aktif' ? 'badge-hijau' : 'badge-abu') + '">' + d.status + '</span></div>' +
+      '<div class="card-info">' + d.nama + '<br>' +
+        '🕐 ' + akt.length + ' aktivitas</div>';
+
+    if (exp) {
+      html += '<div class="card-detail" onclick="event.stopPropagation()">' +
+        '<div>🕐 Aktivitas:</div>';
+      akt.sort(function(a, c) { return (a.waktu || '').localeCompare(c.waktu || ''); });
+      akt.forEach(function(a) { html += '<div>' + a.waktu + ' ' + a.nama + '</div>'; });
+      html += '<div class="card-actions">' +
+          '<button onclick="Engine.bukaFormMasterDestinasi(\'' + d.id + '\')">✏️ Edit</button>' +
+          '<button onclick="Engine.hapusMasterDestinasi(\'' + d.id + '\')">🗑️ Hapus</button>' +
+        '</div></div>';
+    }
+    html += '</div>';
+    return html;
+  },
+
   // ---------------------------------
   // MASTER FILTER & SEARCH HELPERS
   // ---------------------------------
@@ -2315,17 +1896,6 @@ const Engine = {
     var lastBackup  = Core.getLastBackup();
     var lastRestore = Core.getLastRestore();
 
-    var destListData = Core.getDaftarDestinasi();
-    var destHtml = destListData.map(function(d, i) {
-      return '<div class="tempat-jemput-item">' +
-        '<span>' + d + '</span>' +
-        '<span class="checklist-actions">' +
-          '<button class="btn-mini" onclick="Engine.editDestinasiPengaturan(' + i + ')">✏️</button>' +
-          '<button class="btn-mini btn-hapus" onclick="Engine.hapusDestinasiPengaturan(' + i + ')">🗑️</button>' +
-        '</span>' +
-      '</div>';
-    }).join('');
-
     konten.innerHTML =
       '<div class="halaman-pengaturan">' +
         '<div class="pengaturan-section">' +
@@ -2350,16 +1920,6 @@ const Engine = {
               'onclick="Engine.tambahTempatJemput()">+</button>' +
           '</div>' +
           '<button class="btn-simpan" onclick="Engine.simpanPengaturan()">Simpan Profil</button>' +
-        '</div>' +
-        '<div class="pengaturan-section">' +
-          '<h3>📍 Daftar Destinasi</h3>' +
-          '<p style="font-size:13px;color:#666">Kelola daftar destinasi untuk hotel dan paket tour.</p>' +
-          destHtml +
-          '<div style="display:flex;gap:8px;margin-top:8px">' +
-            '<input type="text" id="sDestBaru" placeholder="Tambah destinasi baru">' +
-            '<button class="btn-tambah" style="width:auto;margin:0;padding:8px 14px" ' +
-              'onclick="Engine.tambahDestinasiPengaturan()">+</button>' +
-          '</div>' +
         '</div>' +
         '<div class="pengaturan-section">' +
           '<h3>💾 Simpan Data</h3>' +
@@ -2403,48 +1963,6 @@ const Engine = {
     s.tempatJemput = s.tempatJemput || [];
     s.tempatJemput.splice(index, 1);
     Core.saveSettings(s);
-    this.showHalaman('pengaturan');
-  },
-
-  tambahDestinasiPengaturan() {
-    var input = document.getElementById('sDestBaru');
-    if (!input || !input.value.trim()) return;
-    var hasil = Core.tambahDestinasi(input.value.trim());
-    if (!hasil.ok) {
-      alert(hasil.msg);
-      return;
-    }
-    this.showHalaman('pengaturan');
-  },
-
-  editDestinasiPengaturan(index) {
-    var list = Core.getDaftarDestinasi();
-    var namaLama = list[index];
-    if (!namaLama) return;
-    var namaBaru = prompt('Edit nama destinasi:', namaLama);
-    if (namaBaru === null) return;
-    if (!namaBaru.trim()) {
-      alert('Nama destinasi tidak boleh kosong');
-      return;
-    }
-    var hasil = Core.editDestinasi(namaLama, namaBaru.trim());
-    if (!hasil.ok) {
-      alert(hasil.msg);
-      return;
-    }
-    this.showHalaman('pengaturan');
-  },
-
-  hapusDestinasiPengaturan(index) {
-    var list = Core.getDaftarDestinasi();
-    var nama = list[index];
-    if (!nama) return;
-    if (!confirm('Yakin hapus destinasi "' + nama + '"?')) return;
-    var hasil = Core.hapusDestinasi(nama);
-    if (!hasil.ok) {
-      alert(hasil.msg);
-      return;
-    }
     this.showHalaman('pengaturan');
   },
 
@@ -2514,14 +2032,14 @@ const Engine = {
     var isEdit = !!editId;
     var paket  = isEdit ? Core.getMasterPaketById(editId) : null;
     var id     = isEdit ? paket.id : Core.generatePaketId();
-    var destList = Core.getDaftarDestinasi();
+    var destAktif = Core.getMasterDestinasiAktif();
 
-    var destOptions = destList.map(function(d) {
-      var checked = isEdit && paket.destinasi && paket.destinasi.includes(d)
+    var destOptions = destAktif.map(function(d) {
+      var checked = isEdit && paket.destinasi && paket.destinasi.includes(d.nama)
         ? ' checked' : '';
       return '<label class="checkbox"><input type="checkbox" ' +
-        'name="fPaketDest" value="' + d + '"' + checked + '> ' +
-        d + '</label>';
+        'name="fPaketDest" value="' + d.nama + '"' + checked + '> ' +
+        d.nama + '</label>';
     }).join('');
 
     var html =
@@ -2533,48 +2051,28 @@ const Engine = {
         '<input type="text" id="fPaketNama" required placeholder="contoh: Bromo + Ijen" ' +
           'value="' + (isEdit ? paket.nama : '') + '">' +
         '<label>Pilih Destinasi *</label>' +
-        '<div class="fasilitas-group" id="fPaketDestList">' + destOptions + '</div>' +
-        '<button type="button" class="btn-tambah" style="margin-top:4px" ' +
-          'onclick="Engine.tambahDestDariPaket()">➕ Tambah Destinasi Baru</button>' +
+        '<div class="fasilitas-group">' + destOptions + '</div>' +
         '<label>Durasi (hari) *</label>' +
         '<input type="number" id="fPaketHari" min="1" required placeholder="3" ' +
           'value="' + (isEdit ? paket.durHari : '') + '">' +
         '<label>Durasi (malam) *</label>' +
         '<input type="number" id="fPaketMalam" min="0" required placeholder="2" ' +
           'value="' + (isEdit ? paket.durMalam : '') + '">' +
+        '<label>Jumlah Pax *</label>' +
+        '<input type="number" id="fPaketPax" min="1" required placeholder="4" ' +
+          'value="' + (isEdit ? paket.pax : '') + '">' +
+        '<label>Harga Paket *</label>' +
+        '<input type="number" id="fPaketHarga" min="0" required placeholder="0" ' +
+          'value="' + (isEdit ? paket.harga : '') + '">' +
+        '<label>Status Paket *</label>' +
+        '<select id="fPaketStatus" required>' +
+          '<option value="Aktif"' + (isEdit && paket.status === 'Aktif' ? ' selected' : '') + '>Aktif</option>' +
+          '<option value="Nonaktif"' + (isEdit && paket.status === 'Nonaktif' ? ' selected' : '') + '>Nonaktif</option>' +
+        '</select>' +
         '<button type="submit" class="btn-simpan">Simpan</button>' +
       '</form>';
 
     this.bukaModal('📦 ' + (isEdit ? 'Edit' : 'Tambah') + ' Paket Tour', html);
-  },
-
-  tambahDestDariPaket() {
-    var nama = prompt('Ketik nama destinasi baru:');
-    if (nama === null) return;
-    if (!nama.trim()) {
-      alert('Nama destinasi tidak boleh kosong');
-      return;
-    }
-    var hasil = Core.tambahDestinasi(nama.trim());
-    if (!hasil.ok) {
-      alert(hasil.msg);
-      return;
-    }
-    var checkedNow = [];
-    document.querySelectorAll('input[name="fPaketDest"]:checked').forEach(function(el) {
-      checkedNow.push(el.value);
-    });
-    checkedNow.push(hasil.nama);
-    var destList = Core.getDaftarDestinasi();
-    var newHtml = destList.map(function(d) {
-      var checked = checkedNow.includes(d) ? ' checked' : '';
-      return '<label class="checkbox"><input type="checkbox" ' +
-        'name="fPaketDest" value="' + d + '"' + checked + '> ' +
-        d + '</label>';
-    }).join('');
-    var container = document.getElementById('fPaketDestList');
-    if (container) container.innerHTML = newHtml;
-
   },
 
   simpanMasterPaket(event, editId) {
@@ -2583,6 +2081,9 @@ const Engine = {
     var nama   = document.getElementById('fPaketNama').value.trim();
     var hari   = document.getElementById('fPaketHari').value;
     var malam  = document.getElementById('fPaketMalam').value;
+    var pax    = document.getElementById('fPaketPax').value;
+    var harga  = document.getElementById('fPaketHarga').value;
+    var status = document.getElementById('fPaketStatus').value;
 
     var destChecked = document.querySelectorAll('input[name="fPaketDest"]:checked');
     var destinasi = [];
@@ -2599,7 +2100,9 @@ const Engine = {
       destinasi: destinasi,
       durHari  : Number(hari),
       durMalam : Number(malam),
-      status   : 'Aktif'
+      pax      : Number(pax),
+      harga    : Number(harga),
+      status   : status
     };
 
     var list = Core.getMasterPaket();
@@ -2623,95 +2126,12 @@ const Engine = {
   },
 
   // ---------------------------------
-  // FORM MASTER PAKET DARI BOOKING
-  // ---------------------------------
-  bukaFormMasterPaketDariBooking() {
-    var id = Core.generatePaketId();
-    var destList = Core.getDaftarDestinasi();
-
-    var destOptions = destList.map(function(d) {
-      return '<label class="checkbox"><input type="checkbox" ' +
-        'name="fPaketDest" value="' + d + '"> ' +
-        d + '</label>';
-    }).join('');
-
-    var html =
-      '<form onsubmit="Engine.simpanMasterPaketDariBooking(event)" oninput="Engine.tandaiDirty()">' +
-        '<label>ID Paket</label>' +
-        '<input type="text" value="' + id + '" readonly>' +
-        '<label>Nama Paket *</label>' +
-        '<input type="text" id="fPaketNama" required placeholder="contoh: Bromo + Ijen">' +
-        '<label>Pilih Destinasi *</label>' +
-        '<div class="fasilitas-group" id="fPaketDestList">' + destOptions + '</div>' +
-        '<button type="button" class="btn-tambah" style="margin-top:4px" ' +
-          'onclick="Engine.tambahDestDariPaket()">➕ Tambah Destinasi Baru</button>' +
-        '<label>Durasi (hari) *</label>' +
-        '<input type="number" id="fPaketHari" min="1" required placeholder="3">' +
-        '<label>Durasi (malam) *</label>' +
-        '<input type="number" id="fPaketMalam" min="0" required placeholder="2">' +
-        '<button type="submit" class="btn-simpan">Simpan & Pilih Paket</button>' +
-      '</form>';
-
-    this.bukaModal('📦 Tambah Paket Baru', html);
-  },
-
-  simpanMasterPaketDariBooking(event) {
-    event.preventDefault();
-    var nama  = document.getElementById('fPaketNama').value.trim();
-    var hari  = document.getElementById('fPaketHari').value;
-    var malam = document.getElementById('fPaketMalam').value;
-
-    var destChecked = document.querySelectorAll('input[name="fPaketDest"]:checked');
-    var destinasi = [];
-    destChecked.forEach(function(el) { destinasi.push(el.value); });
-
-    if (!nama || !hari || destinasi.length === 0) {
-      alert('Lengkapi semua field bertanda *');
-      return;
-    }
-
-    var newId = Core.generatePaketId();
-    var data = {
-      id       : newId,
-      nama     : nama,
-      destinasi: destinasi,
-      durHari  : Number(hari),
-      durMalam : Number(malam),
-      status   : 'Aktif'
-    };
-
-    var list = Core.getMasterPaket();
-    list.push(data);
-    Core.saveMasterPaket(list);
-
-    this.state.dirtyForm = false;
-    this.tutupModal();
-    this.bukaFormOrder();
-
-    setTimeout(function() {
-      var sel = document.getElementById('fOrderPaket');
-      if (sel) {
-        sel.value = newId;
-        Engine.onPaketChange();
-      }
-    }, 100);
-  },
-
-  // ---------------------------------
   // FORM MASTER DRIVER
   // ---------------------------------
   bukaFormMasterDriver(editId) {
     var isEdit = !!editId;
     var driver = isEdit ? Core.getMasterDriverById(editId) : null;
     var id     = isEdit ? driver.id : Core.generateDriverId();
-
-    var kdrList = Core.getDaftarKendaraan();
-    var kendaraanOptions = '<option value="">Pilih kendaraan...</option>';
-    kdrList.forEach(function(k) {
-      var sel = isEdit && driver.kendaraan === k ? ' selected' : '';
-      kendaraanOptions += '<option value="' + k + '"' + sel + '>' + k + '</option>';
-    });
-    kendaraanOptions += '<option value="__tambahKdr">➕ Tambah Kendaraan Baru</option>';
 
     var html =
       '<form onsubmit="Engine.simpanMasterDriver(event,\'' +
@@ -2725,11 +2145,8 @@ const Engine = {
         '<input type="tel" id="fDriverHP" required placeholder="08xxxxxxxxxx" ' +
           'value="' + (isEdit ? driver.noHP : '') + '">' +
         '<label>Jenis Kendaraan *</label>' +
-        '<select id="fDriverKendaraan" onchange="Engine.onKendaraanChange()" required>' +
-          kendaraanOptions +
-        '</select>' +
-        '<input type="text" id="fDriverKendaraanManual" style="display:none" ' +
-          'placeholder="Ketik jenis kendaraan baru">' +
+        '<input type="text" id="fDriverKendaraan" required placeholder="contoh: Hiace" ' +
+          'value="' + (isEdit ? driver.kendaraan : '') + '">' +
         '<label>Tipe Driver *</label>' +
         '<select id="fDriverTipe" required>' +
           '<option value="Driver Tour"' + (isEdit && driver.tipe === 'Driver Tour' ? ' selected' : '') + '>Driver Tour</option>' +
@@ -2746,38 +2163,14 @@ const Engine = {
     this.bukaModal('🚗 ' + (isEdit ? 'Edit' : 'Tambah') + ' Driver', html);
   },
 
-  onKendaraanChange() {
-    var sel = document.getElementById('fDriverKendaraan');
-    var man = document.getElementById('fDriverKendaraanManual');
-    if (sel && man) {
-      man.style.display = sel.value === '__tambahKdr' ? 'block' : 'none';
-      if (sel.value !== '__tambahKdr') man.value = '';
-    }
-  },
-
   simpanMasterDriver(event, editId) {
     event.preventDefault();
     var isEdit    = !!editId;
     var nama      = document.getElementById('fDriverNama').value.trim();
     var hp        = document.getElementById('fDriverHP').value.trim();
-    var kdrSel    = document.getElementById('fDriverKendaraan').value;
-    var kdrManual = document.getElementById('fDriverKendaraanManual').value.trim();
+    var kendaraan = document.getElementById('fDriverKendaraan').value.trim();
     var tipe      = document.getElementById('fDriverTipe').value;
     var status    = document.getElementById('fDriverStatus').value;
-
-    var kendaraan = kdrSel;
-    if (kdrSel === '__tambahKdr') {
-      if (!kdrManual) {
-        alert('Ketik jenis kendaraan baru');
-        return;
-      }
-      var hasil = Core.tambahKendaraan(kdrManual);
-      if (!hasil.ok) {
-        alert(hasil.msg);
-        return;
-      }
-      kendaraan = hasil.nama;
-    }
 
     if (!nama || !hp || !kendaraan) {
       alert('Lengkapi semua field bertanda *');
@@ -2820,14 +2213,13 @@ const Engine = {
     var isEdit = !!editId;
     var hotel  = isEdit ? Core.getMasterHotelById(editId) : null;
     var id     = isEdit ? hotel.id : Core.generateHotelId();
-    var destList = Core.getDaftarDestinasi();
+    var destAktif = Core.getMasterDestinasiAktif();
 
     var destOptions = '<option value="">Pilih destinasi...</option>';
-    destList.forEach(function(d) {
-      var sel = isEdit && hotel.destinasi === d ? ' selected' : '';
-      destOptions += '<option value="' + d + '"' + sel + '>' + d + '</option>';
+    destAktif.forEach(function(d) {
+      var sel = isEdit && hotel.destinasi === d.nama ? ' selected' : '';
+      destOptions += '<option value="' + d.nama + '"' + sel + '>' + d.nama + '</option>';
     });
-    destOptions += '<option value="__tambahDest">➕ Tambah Destinasi Baru</option>';
 
     var html =
       '<form onsubmit="Engine.simpanMasterHotel(event,\'' +
@@ -2838,8 +2230,7 @@ const Engine = {
         '<input type="text" id="fHotelNamaM" required placeholder="contoh: Hotel Bromo View" ' +
           'value="' + (isEdit ? hotel.nama : '') + '">' +
         '<label>Lokasi / Destinasi *</label>' +
-        '<select id="fHotelDestM" onchange="Engine.onDestMasterChange()" required>' + destOptions + '</select>' +
-        '<input type="text" id="fHotelDestManual" style="display:none" placeholder="Ketik nama destinasi baru">' +
+        '<select id="fHotelDestM" required>' + destOptions + '</select>' +
         '<label>Harga Standar / Malam *</label>' +
         '<input type="number" id="fHotelHargaM" min="0" required placeholder="0" ' +
           'value="' + (isEdit ? hotel.harga : '') + '">' +
@@ -2857,38 +2248,14 @@ const Engine = {
     this.bukaModal('🏨 ' + (isEdit ? 'Edit' : 'Tambah') + ' Hotel', html);
   },
 
-  onDestMasterChange() {
-    var sel = document.getElementById('fHotelDestM');
-    var man = document.getElementById('fHotelDestManual');
-    if (sel && man) {
-      man.style.display = sel.value === '__tambahDest' ? 'block' : 'none';
-      if (sel.value !== '__tambahDest') man.value = '';
-    }
-  },
-
   simpanMasterHotel(event, editId) {
     event.preventDefault();
     var isEdit = !!editId;
     var nama   = document.getElementById('fHotelNamaM').value.trim();
-    var destSel = document.getElementById('fHotelDestM').value;
-    var destManual = document.getElementById('fHotelDestManual').value.trim();
+    var dest   = document.getElementById('fHotelDestM').value;
     var harga  = document.getElementById('fHotelHargaM').value;
     var ket    = document.getElementById('fHotelKetM').value.trim();
     var status = document.getElementById('fHotelStatusM').value;
-
-    var dest = destSel;
-    if (destSel === '__tambahDest') {
-      if (!destManual) {
-        alert('Ketik nama destinasi baru');
-        return;
-      }
-      var hasil = Core.tambahDestinasi(destManual);
-      if (!hasil.ok) {
-        alert(hasil.msg);
-        return;
-      }
-      dest = hasil.nama;
-    }
 
     if (!nama || !dest || !harga) {
       alert('Lengkapi semua field bertanda *');
@@ -2927,7 +2294,150 @@ const Engine = {
   // ---------------------------------
   // FORM MASTER DESTINASI
   // ---------------------------------
+  bukaFormMasterDestinasi(editId) {
+    var isEdit  = !!editId;
+    var dest    = isEdit ? Core.getMasterDestinasiById(editId) : null;
+    var id      = isEdit ? dest.id : Core.generateDestinasiId();
+    var aktList = isEdit ? (dest.aktivitas || []) : [];
 
+    aktList.sort(function(a, b) { return (a.waktu || '').localeCompare(b.waktu || ''); });
+
+    var aktHtml = '';
+    if (aktList.length > 0) {
+      aktHtml = '<div id="daftarAktivitas">';
+      aktList.forEach(function(a, i) {
+        aktHtml +=
+          '<div class="tempat-jemput-item">' +
+            '<span>' + a.waktu + ' ' + a.nama + '</span>' +
+            '<button class="btn-hapus" type="button" ' +
+              'onclick="Engine.hapusAktivitas(' + i + ')">🗑️</button>' +
+          '</div>';
+      });
+      aktHtml += '</div>';
+    } else {
+      aktHtml = '<div id="daftarAktivitas"><p style="font-size:13px;color:#999">Belum ada aktivitas</p></div>';
+    }
+
+    var html =
+      '<form onsubmit="Engine.simpanMasterDestinasi(event,\'' +
+        (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
+        '<label>ID Destinasi</label>' +
+        '<input type="text" value="' + id + '" readonly>' +
+        '<label>Nama Destinasi *</label>' +
+        '<input type="text" id="fDestNama" required placeholder="contoh: Bromo" ' +
+          'value="' + (isEdit ? dest.nama : '') + '">' +
+        '<label>🕐 Aktivitas:</label>' +
+        aktHtml +
+        '<div class="section-divider">── Tambah Aktivitas ──</div>' +
+        '<label>Waktu *</label>' +
+        '<input type="time" id="fDestAktWaktu">' +
+        '<label>Nama Aktivitas *</label>' +
+        '<input type="text" id="fDestAktNama" placeholder="contoh: Sunrise">' +
+        '<button type="button" class="btn-tambah" ' +
+          'onclick="Engine.tambahAktivitas()">+ Tambah Aktivitas</button>' +
+        '<input type="hidden" id="fDestAktData" value="' +
+          JSON.stringify(aktList).replace(/'/g, '&#39;') + '">' +
+        '<label>Status *</label>' +
+        '<select id="fDestStatus" required>' +
+          '<option value="Aktif"' + (isEdit && dest.status === 'Aktif' ? ' selected' : '') + '>Aktif</option>' +
+          '<option value="Nonaktif"' + (isEdit && dest.status === 'Nonaktif' ? ' selected' : '') + '>Nonaktif</option>' +
+        '</select>' +
+        '<button type="submit" class="btn-simpan">Simpan</button>' +
+      '</form>';
+
+    this.bukaModal('📍 ' + (isEdit ? 'Edit' : 'Tambah') + ' Destinasi', html);
+  },
+
+  tambahAktivitas() {
+    var waktu = document.getElementById('fDestAktWaktu').value;
+    var nama  = document.getElementById('fDestAktNama').value.trim();
+    if (!waktu || !nama) {
+      alert('Isi waktu dan nama aktivitas');
+      return;
+    }
+
+    var dataEl = document.getElementById('fDestAktData');
+    var list = JSON.parse(dataEl.value || '[]');
+    list.push({ waktu: waktu, nama: nama });
+    list.sort(function(a, b) { return (a.waktu || '').localeCompare(b.waktu || ''); });
+    dataEl.value = JSON.stringify(list);
+
+    var container = document.getElementById('daftarAktivitas');
+    container.innerHTML = '';
+    list.forEach(function(a, i) {
+      container.innerHTML +=
+        '<div class="tempat-jemput-item">' +
+          '<span>' + a.waktu + ' ' + a.nama + '</span>' +
+          '<button class="btn-hapus" type="button" ' +
+            'onclick="Engine.hapusAktivitas(' + i + ')">🗑️</button>' +
+        '</div>';
+    });
+
+    document.getElementById('fDestAktWaktu').value = '';
+    document.getElementById('fDestAktNama').value  = '';
+  },
+
+  hapusAktivitas(index) {
+    var dataEl = document.getElementById('fDestAktData');
+    var list = JSON.parse(dataEl.value || '[]');
+    list.splice(index, 1);
+    dataEl.value = JSON.stringify(list);
+
+    var container = document.getElementById('daftarAktivitas');
+    container.innerHTML = '';
+    if (list.length === 0) {
+      container.innerHTML = '<p style="font-size:13px;color:#999">Belum ada aktivitas</p>';
+      return;
+    }
+    list.forEach(function(a, i) {
+      container.innerHTML +=
+        '<div class="tempat-jemput-item">' +
+          '<span>' + a.waktu + ' ' + a.nama + '</span>' +
+          '<button class="btn-hapus" type="button" ' +
+            'onclick="Engine.hapusAktivitas(' + i + ')">🗑️</button>' +
+        '</div>';
+    });
+  },
+
+  simpanMasterDestinasi(event, editId) {
+    event.preventDefault();
+    var isEdit = !!editId;
+    var nama   = document.getElementById('fDestNama').value.trim();
+    var status = document.getElementById('fDestStatus').value;
+    var aktData = document.getElementById('fDestAktData');
+    var aktivitas = JSON.parse(aktData.value || '[]');
+
+    if (!nama) {
+      alert('Lengkapi semua field bertanda *');
+      return;
+    }
+
+    var data = {
+      id        : isEdit ? editId : Core.generateDestinasiId(),
+      nama      : nama,
+      aktivitas : aktivitas,
+      status    : status
+    };
+
+    var list = Core.getMasterDestinasi();
+    if (isEdit) {
+      var idx = list.findIndex(function(d) { return d.id === editId; });
+      if (idx >= 0) list[idx] = data;
+    } else {
+      list.push(data);
+    }
+    Core.saveMasterDestinasi(list);
+    this.state.dirtyForm = false;
+    this.tutupModal();
+    this.showHalaman('masterDestinasi');
+  },
+
+  hapusMasterDestinasi(id) {
+    if (!confirm('Yakin hapus destinasi ini?')) return;
+    var list = Core.getMasterDestinasi().filter(function(d) { return d.id !== id; });
+    Core.saveMasterDestinasi(list);
+    this.showHalaman('masterDestinasi');
+  }
 
 
 };

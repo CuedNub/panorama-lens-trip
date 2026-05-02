@@ -1160,3 +1160,49 @@ html, body {
   }
 }
 
+
+/* ── TOMBOL MINI CARD BOOKING ── */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  gap: 6px;
+}
+.checklist-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.btn-mini {
+  border: none;
+  background: #e8e8e8;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+}
+.btn-mini:active {
+  background: #d0d0d0;
+}
+.btn-mini.btn-hapus {
+  background: #ffe0e0;
+}
+.btn-mini.btn-hapus:active {
+  background: #ffb0b0;
+}
+.btn-mini.btn-pesan {
+  background: #e0f0ff;
+  white-space: nowrap;
+}
+.btn-mini.btn-pesan:active {
+  background: #b0d8ff;
+}
+.card-actions .btn-hapus {
+  background: #ffe0e0;
+  color: #c00;
+}
+.card-actions .btn-hapus:active {
+  background: #ffb0b0;
+}

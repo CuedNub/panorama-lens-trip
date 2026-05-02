@@ -24,7 +24,7 @@
 // KONSTANTA APLIKASI
 // ---------------------------------
 const APP_NAME_DEFAULT = 'Panorama Lens Trip';
-const APP_VERSION      = '1.0.1';
+const APP_VERSION      = '1.1.0';
 const PREFIX_DEFAULT   = 'PL';
 
 // ---------------------------------
@@ -89,6 +89,27 @@ const Core = {
 
   saveSettings(data) {
     return this.save('plt_settings', data);
+  },
+
+  // ---------------------------------
+  // MIGRASI DATA
+  // ---------------------------------
+  migrateBookingData() {
+    if (localStorage.getItem('plt_migrated_v2')) return;
+    var bookings = this.get('plt_booking') || [];
+    var changed = false;
+    bookings.forEach(function(b) {
+      if ('tempatJemput' in b) { delete b.tempatJemput; changed = true; }
+      if ('waktuJemput' in b) { delete b.waktuJemput; changed = true; }
+    });
+    if (changed) {
+      this.save('plt_booking', bookings);
+    }
+    localStorage.removeItem('plt_master_destinasi');
+    if (!localStorage.getItem('plt_daftar_destinasi')) {
+      this.save('plt_daftar_destinasi', ['Bromo', 'Ijen', 'Semeru']);
+    }
+    localStorage.setItem('plt_migrated_v2', '1');
   },
 
   // ---------------------------------
@@ -195,6 +216,91 @@ const Core = {
 
   getMasterDestinasiAktif() {
     return this.getMasterDestinasi().filter(d => d.status === 'Aktif');
+  },
+
+  // ---------------------------------
+  // DAFTAR DESTINASI (plt_daftar_destinasi)
+  // ---------------------------------
+  getDaftarDestinasi() {
+    return this.get('plt_daftar_destinasi') || ['Bromo', 'Ijen', 'Semeru'];
+  },
+
+  saveDaftarDestinasi(data) {
+    return this.save('plt_daftar_destinasi', data);
+  },
+
+  capitalizeNama(nama) {
+    if (!nama) return '';
+    return nama.trim().replace(/\s+/g, ' ')
+      .split(' ')
+      .map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); })
+      .join(' ');
+  },
+
+  tambahDestinasi(nama) {
+    var clean = this.capitalizeNama(nama);
+    if (!clean) return { ok: false, msg: 'Nama destinasi tidak boleh kosong' };
+    var list = this.getDaftarDestinasi();
+    var sudahAda = list.some(function(d) { return d.toLowerCase() === clean.toLowerCase(); });
+    if (sudahAda) return { ok: false, msg: 'Destinasi "' + clean + '" sudah ada di daftar' };
+    list.push(clean);
+    list.sort();
+    this.saveDaftarDestinasi(list);
+    return { ok: true, nama: clean };
+  },
+
+  editDestinasi(namaLama, namaBaru) {
+    var clean = this.capitalizeNama(namaBaru);
+    if (!clean) return { ok: false, msg: 'Nama destinasi tidak boleh kosong' };
+    var list = this.getDaftarDestinasi();
+    var idx = list.findIndex(function(d) { return d === namaLama; });
+    if (idx < 0) return { ok: false, msg: 'Destinasi lama tidak ditemukan' };
+    var sudahAda = list.some(function(d, i) { return i !== idx && d.toLowerCase() === clean.toLowerCase(); });
+    if (sudahAda) return { ok: false, msg: 'Destinasi "' + clean + '" sudah ada di daftar' };
+    var namaLamaStr = list[idx];
+    list[idx] = clean;
+    list.sort();
+    this.saveDaftarDestinasi(list);
+    var hotels = this.getMasterHotel();
+    var changed = false;
+    hotels.forEach(function(h) {
+      if (h.destinasi === namaLamaStr) { h.destinasi = clean; changed = true; }
+    });
+    if (changed) this.saveMasterHotel(hotels);
+    return { ok: true, nama: clean };
+  },
+
+  hapusDestinasi(nama) {
+    var hotels = this.getMasterHotel().filter(function(h) { return h.destinasi === nama; });
+    if (hotels.length > 0) {
+      return { ok: false, msg: 'Destinasi "' + nama + '" masih dipakai ' + hotels.length + ' data hotel. Edit atau pindahkan datanya dulu.' };
+    }
+    var list = this.getDaftarDestinasi().filter(function(d) { return d !== nama; });
+    this.saveDaftarDestinasi(list);
+    return { ok: true };
+  },
+
+  // ---------------------------------
+  // DAFTAR KENDARAAN (plt_daftar_kendaraan)
+  // ---------------------------------
+  getDaftarKendaraan() {
+    return this.get('plt_daftar_kendaraan') || ['Hiace', 'Avanza', 'Innova', 'Jeep', 'Elf'];
+  },
+
+  saveDaftarKendaraan(data) {
+    return this.save('plt_daftar_kendaraan', data);
+  },
+
+  tambahKendaraan(nama) {
+    var clean = this.capitalizeNama(nama);
+    if (!clean) return { ok: false, msg: 'Nama kendaraan tidak boleh kosong' };
+    var list = this.getDaftarKendaraan();
+    var sudahAda = list.some(function(k) { return k.toLowerCase() === clean.toLowerCase(); });
+    if (sudahAda) return { ok: false, msg: 'Kendaraan "' + clean + '" sudah ada di daftar' };
+    list.push(clean);
+    list.sort();
+    this.saveDaftarKendaraan(list);
+    return { ok: true, nama: clean };
   },
 
   // ---------------------------------
