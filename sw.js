@@ -4,21 +4,22 @@
   FUNGSI  : Service worker, cache offline, handle update PWA
 */
 
-const CACHE_NAME = 'plt-cache-v1.1.0';
+const CACHE_NAME = 'plt-cache-v1.1.1';
 
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/style.css',
-  '/js/license.js',
-  '/js/core.js',
-  '/js/engine.js',
-  '/js/itinerary.js',
-  '/js/data_sync.js',
-  '/js/app_update.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './version.json',
+  './css/style.css',
+  './js/license.js',
+  './js/core.js',
+  './js/engine.js',
+  './js/itinerary.js',
+  './js/data_sync.js',
+  './js/app_update.js',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 // ---------------------------------

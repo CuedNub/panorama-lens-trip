@@ -1,4 +1,4 @@
 {
-  "version": "1.1.0",
-  "notes": "Perbaiki checkbox fasilitas, auto-isi tempat & waktu jemput, search bar pakai tombol"
+  "version": "1.1.1",
+  "notes": "Perbaiki manifest dan path cache service worker agar PWA bisa diinstal"
 }
