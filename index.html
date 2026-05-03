@@ -72,7 +72,11 @@
         window.navigator.standalone === true ||
         document.referrer.indexOf('android-app://') === 0;
 
-      if (!isStandalone) {
+      var isLocalhost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
+      if (!isStandalone && !isLocalhost) {
         document.body.innerHTML =
           '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#f0fdf4;font-family:Arial,sans-serif">' +
             '<div style="max-width:420px;width:100%;background:#ffffff;border:1px solid #dcfce7;border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center">' +

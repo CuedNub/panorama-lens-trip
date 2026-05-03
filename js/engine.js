@@ -32,10 +32,224 @@ const Engine = {
   },
 
   // ---------------------------------
+  // KALKULATOR HARGA
+  // ---------------------------------
+  calcTargetId: null,
+
+  bukaKalkulator(targetId) {
+    this.calcTargetId = targetId;
+    var existing = document.getElementById('calcOverlay');
+    if (existing) existing.remove();
+
+    var div = document.createElement('div');
+    div.id = 'calcOverlay';
+    div.className = 'calc-overlay';
+    div.onclick = function(e) {
+      if (e.target.id === 'calcOverlay') Engine.tutupKalkulator();
+    };
+
+    div.innerHTML =
+      '<div class="calc-box">' +
+        '<div class="calc-header">' +
+          '<h3>🧮 KALKULATOR HARGA</h3>' +
+          '<button class="calc-info-btn" onclick="Engine.toggleInfoKalkulator()">ℹ️</button>' +
+        '</div>' +
+        '<div class="calc-tutorial" id="calcTutorial">' +
+          '<b>📖 CARA PAKAI:</b><br><br>' +
+          '1. KETIK ANGKA DAN TANDA HITUNG DI KOLOM RUMUS<br>' +
+          '   CONTOH: 500000*4<br><br>' +
+          '2. TANDA HITUNG YANG BISA DIPAKAI:<br>' +
+          '   <b>+</b> → TAMBAH (CONTOH: 100000+200000)<br>' +
+          '   <b>-</b> → KURANG (CONTOH: 500000-100000)<br>' +
+          '   <b>*</b> → KALI (CONTOH: 250000*3)<br>' +
+          '   <b>/</b> → BAGI (CONTOH: 900000/3)<br><br>' +
+          '3. HASIL OTOMATIS MUNCUL DI BAWAH KOLOM RUMUS<br><br>' +
+          '4. KALAU SUDAH BENAR, TEKAN TOMBOL <b>PAKAI HASIL</b><br><br>' +
+          '5. KALAU MAU BATAL, TEKAN TOMBOL <b>BATAL</b><br><br>' +
+          '<b>CONTOH RUMUS:</b><br>' +
+          '• 500000*4 → HASIL: 2.000.000<br>' +
+          '• 350000+200000 → HASIL: 550.000<br>' +
+          '• 1000000-250000 → HASIL: 750.000<br>' +
+          '• 900000/3 → HASIL: 300.000' +
+        '</div>' +
+        '<div class="calc-label">KETIK RUMUS:</div>' +
+        '<input type="text" inputmode="tel" class="calc-input" id="calcInput" ' +
+          'placeholder="CONTOH: 500000*4" oninput="Engine.hitungKalkulator()" autocomplete="off">' +
+        '<div class="calc-result" id="calcResult">HASIL: -</div>' +
+        '<div class="calc-buttons">' +
+          '<button class="calc-btn-pakai" onclick="Engine.pakaiHasilKalkulator()">PAKAI HASIL</button>' +
+          '<button class="calc-btn-batal" onclick="Engine.tutupKalkulator()">BATAL</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(div);
+
+    setTimeout(function() {
+      var inp = document.getElementById('calcInput');
+      if (inp) inp.focus();
+    }, 100);
+  },
+
+  tutupKalkulator() {
+    var el = document.getElementById('calcOverlay');
+    if (el) el.remove();
+    this.calcTargetId = null;
+  },
+
+  hitungKalkulator() {
+    var input = document.getElementById('calcInput');
+    var result = document.getElementById('calcResult');
+    if (!input || !result) return;
+
+    var rumus = input.value.replace(/[^0-9+\-*/().]/g, '');
+
+    if (!rumus) {
+      result.innerHTML = 'HASIL: -';
+      result.className = 'calc-result';
+      return;
+    }
+
+    try {
+      if (/[+\-*/]$/.test(rumus)) {
+        result.innerHTML = 'HASIL: ...';
+        result.className = 'calc-result';
+        return;
+      }
+
+      if (/[^0-9+\-*/().]/.test(rumus)) {
+        result.innerHTML = 'RUMUS TIDAK VALID';
+        result.className = 'calc-result error';
+        return;
+      }
+
+      var nilai = Function('"use strict"; return (' + rumus + ')')();
+
+      if (isNaN(nilai) || !isFinite(nilai)) {
+        result.innerHTML = 'RUMUS TIDAK VALID';
+        result.className = 'calc-result error';
+        return;
+      }
+
+      nilai = Math.round(nilai);
+      result.innerHTML = 'HASIL: ' + Engine.formatRibuan(nilai);
+      result.className = 'calc-result';
+      result.dataset.nilai = nilai;
+    } catch (e) {
+      result.innerHTML = 'RUMUS TIDAK VALID';
+      result.className = 'calc-result error';
+    }
+  },
+
+  pakaiHasilKalkulator() {
+    var result = document.getElementById('calcResult');
+    if (!result || !result.dataset.nilai) {
+      alert('BELUM ADA HASIL YANG BISA DIPAKAI');
+      return;
+    }
+
+    var nilai = Number(result.dataset.nilai) || 0;
+    var target = document.getElementById(this.calcTargetId);
+    if (target) {
+      target.value = Engine.formatRibuan(nilai);
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    this.tutupKalkulator();
+  },
+
+  toggleInfoKalkulator() {
+    var el = document.getElementById('calcTutorial');
+    if (el) el.classList.toggle('show');
+  },
+
+  // ---------------------------------
+  // FORMAT RIBUAN INPUT UANG
+  // ---------------------------------
+  formatRibuan(angka) {
+    if (!angka && angka !== 0) return '';
+    return String(angka).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  },
+
+  parseRibuan(str) {
+    if (!str) return 0;
+    return Number(String(str).replace(/\./g, '')) || 0;
+  },
+
+  initFormatRibuan() {
+    var uangIds = [
+      'fOrderHarga', 'fOrderBayar',
+      'fBayarJumlah',
+      'fHotelHargaM',
+      'fDriverTourBiaya', 'fDriverJeepBiaya',
+      'fPiknikBiaya'
+    ];
+    var uangDynamic = ['fHotelBiaya'];
+
+    document.addEventListener('input', function(e) {
+      var el = e.target;
+      if (!el || !el.id) return;
+
+      var isUang = false;
+      for (var i = 0; i < uangIds.length; i++) {
+        if (el.id === uangIds[i]) { isUang = true; break; }
+      }
+      if (!isUang) {
+        for (var j = 0; j < uangDynamic.length; j++) {
+          if (el.id.indexOf(uangDynamic[j]) === 0) { isUang = true; break; }
+        }
+      }
+
+      if (isUang) {
+        var raw = el.value.replace(/\D/g, '');
+        var start = el.selectionStart;
+        var lenBefore = el.value.length;
+        el.value = Engine.formatRibuan(raw);
+        var lenAfter = el.value.length;
+        var newPos = start + (lenAfter - lenBefore);
+        if (el.setSelectionRange) {
+          el.setSelectionRange(newPos, newPos);
+        }
+      }
+    });
+  },
+
+  // ---------------------------------
+  // AUTO UPPERCASE INPUT TEKS
+  // ---------------------------------
+  initAutoUppercase() {
+    document.addEventListener('input', function(e) {
+      var el = e.target;
+      if (!el || !el.tagName) return;
+      if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') return;
+
+      var tipe = (el.type || '').toLowerCase();
+      if (tipe !== 'text' && tipe !== 'tel') return;
+
+      var id = (el.id || '').toLowerCase();
+      var skipIds = ['semail', 'swebsite', 'flicensecode', 'fordernegaramanual'];
+      for (var i = 0; i < skipIds.length; i++) {
+        if (id === skipIds[i].toLowerCase()) return;
+      }
+
+      var placeholder = (el.placeholder || '').toLowerCase();
+      if (placeholder.indexOf('email') >= 0 || placeholder.indexOf('http') >= 0 || placeholder.indexOf('www') >= 0) return;
+
+      var start = el.selectionStart;
+      var end = el.selectionEnd;
+      el.value = el.value.toUpperCase();
+      if (el.setSelectionRange) {
+        el.setSelectionRange(start, end);
+      }
+    });
+  },
+
+  // ---------------------------------
   // INIT APLIKASI
   // ---------------------------------
   init() {
     Core.migrateBookingData();
+    this.initAutoUppercase();
+    this.initFormatRibuan();
     this.applyTema();
     this.renderHeader();
     this.renderBottomNav();
@@ -323,7 +537,8 @@ const Engine = {
           badgeStatus +
         '</div>' +
         '<div class="card-info">' +
-          '📦 ' + (b.snapshotPaket ? b.snapshotPaket.nama : '-') + '<br>' +
+          '📦 ' + (b.snapshotPaket ? b.snapshotPaket.nama : '-') +
+          ' (' + Core.formatRupiah(b.totalHarga || 0) + ')' + '<br>' +
           '📅 ' + tglBerangkat + ' - ' + tglPulang + '<br>' +
           '💰 ' + badgeBayar +
         '</div>';
@@ -365,6 +580,13 @@ const Engine = {
                 '<button class="btn-mini btn-pesan" onclick="event.stopPropagation();Engine.' + s.action + '(\'' + s.bookingId + '\')">' + s.icon + ' Pesan</button>' +
               '</div>'
             ).join('') +
+          '</div>';
+      }
+
+      if (b.fasilitasHotel) {
+        html +=
+          '<div class="card-actions">' +
+            '<button onclick="Engine.bukaFormHotel(\'' + b.id + '\')">🏨 Tambah Hotel</button>' +
           '</div>';
       }
 
@@ -726,8 +948,12 @@ const Engine = {
         '<div id="fOrderFasilitas"></div>' +
 
         '<label>Harga Paket *</label>' +
-        '<input type="number" id="fOrderHarga" min="0" required ' +
-          'placeholder="0" oninput="Engine.updateSisaBayarOrder()">' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+          '<input type="text" inputmode="numeric" id="fOrderHarga" min="0" required ' +
+            'placeholder="0" oninput="Engine.updateSisaBayarOrder()" style="flex:1">' +
+          '<button type="button" style="padding:8px 12px;border:none;background:#e0f0ff;border-radius:10px;font-size:16px;cursor:pointer" ' +
+            'onclick="Engine.bukaKalkulator(\'fOrderHarga\')">🧮</button>' +
+        '</div>' +
 
         '<label>Tanggal Berangkat *</label>' +
         '<input type="date" id="fOrderTglBerangkat" ' +
@@ -754,7 +980,7 @@ const Engine = {
         '<div class="section-divider">── Pembayaran ──</div>' +
 
         '<label>Jumlah Bayar *</label>' +
-        '<input type="number" id="fOrderBayar" min="0" required ' +
+        '<input type="text" inputmode="numeric" id="fOrderBayar" min="0" required ' +
           'placeholder="0" oninput="Engine.updateSisaBayarOrder()">' +
 
         '<div id="fOrderSisaBayar"></div>' +
@@ -802,6 +1028,7 @@ const Engine = {
       sel.value = '';
       info.innerHTML = '';
       fas.innerHTML  = '';
+      Engine.simpanDraftBooking();
       Engine.bukaFormMasterPaketDariBooking();
       return;
     }
@@ -867,8 +1094,8 @@ const Engine = {
     const statusEl   = document.getElementById('fOrderStatusBayar');
     if (!hargaInput || !bayarInput || !sisaEl || !statusEl) return;
 
-    const total = Number(hargaInput.value) || 0;
-    const bayar = Number(bayarInput.value) || 0;
+    const total = Engine.parseRibuan(hargaInput.value);
+    const bayar = Engine.parseRibuan(bayarInput.value);
     const sisa  = total - bayar;
 
     let status = 'Belum bayar';
@@ -885,9 +1112,9 @@ const Engine = {
     const hp      = document.getElementById('fOrderHP').value.trim();
     const pax     = document.getElementById('fOrderPax').value;
     const paketId = document.getElementById('fOrderPaket').value;
-    const harga   = document.getElementById('fOrderHarga').value;
+    const harga   = Engine.parseRibuan(document.getElementById('fOrderHarga').value);
     const tglBrkt = document.getElementById('fOrderTglBerangkat').value;
-    const bayar   = document.getElementById('fOrderBayar').value;
+    const bayar   = Engine.parseRibuan(document.getElementById('fOrderBayar').value);
 
     if (!nama || !hp || !pax || !paketId || !harga || !tglBrkt) {
       alert('Lengkapi semua field bertanda *');
@@ -987,7 +1214,7 @@ const Engine = {
           '🔴 Sisa Bayar: ' + Core.formatRupiah(sisa) +
         '</div>' +
         '<label>Jumlah Bayar *</label>' +
-        '<input type="number" id="fBayarJumlah" min="1" required placeholder="0">' +
+        '<input type="text" inputmode="numeric" id="fBayarJumlah" min="1" required placeholder="0">' +
         '<label>Tanggal & Waktu Bayar *</label>' +
         '<input type="datetime-local" id="fBayarTanggal" required>' +
         '<label>Metode Bayar *</label>' +
@@ -1006,7 +1233,7 @@ const Engine = {
 
   simpanPembayaran(event, bookingId) {
     event.preventDefault();
-    const jumlah  = document.getElementById('fBayarJumlah').value;
+    const jumlah  = Engine.parseRibuan(document.getElementById('fBayarJumlah').value);
     const tanggal = document.getElementById('fBayarTanggal').value;
     const metode  = document.getElementById('fBayarMetode').value;
     const ket     = document.getElementById('fBayarKet').value.trim();
@@ -1092,6 +1319,9 @@ const Engine = {
       '</select>' +
       '<input type="text" id="fHotelDestManual' + nomor + '" style="display:none" ' +
         'placeholder="Ketik nama destinasi baru">' +
+      '<label>Cari Hotel</label>' +
+      '<input type="text" id="fHotelCari' + nomor + '" placeholder="Ketik untuk mencari hotel" ' +
+        'oninput="Engine.filterHotelOptions(' + nomor + ')">' +
       '<label>Hotel *</label>' +
       '<select id="fHotelNama' + nomor + '" ' +
         'onchange="Engine.onHotelNamaChange(' + nomor + ')" required>' +
@@ -1099,17 +1329,21 @@ const Engine = {
       '</select>' +
       '<input type="text" id="fHotelNamaManual' + nomor + '" style="display:none" ' +
         'placeholder="Ketik nama hotel baru">' +
-      '<label>Tanggal & Waktu Booking *</label>' +
-      '<input type="datetime-local" id="fHotelTgl' + nomor + '" required>' +
       '<label>Biaya Booking</label>' +
-      '<input type="number" id="fHotelBiaya' + nomor + '" min="0" placeholder="0">' +
-      '<label>Status Pembayaran *</label>' +
-      '<select id="fHotelStatus' + nomor + '" required>' +
-        '<option value="">Pilih status...</option>' +
-        '<option value="Lunas">Lunas</option>' +
-        '<option value="Belum Bayar">Belum Bayar</option>' +
-        '<option value="DP">DP</option>' +
-      '</select>' +
+      '<input type="text" inputmode="numeric" id="fHotelBiaya' + nomor + '" min="0" placeholder="0" ' +
+        'oninput="Engine.onHotelBiayaChange(' + nomor + ')">' +
+      '<div id="fHotelTglWrap' + nomor + '" style="display:none">' +
+        '<label>Tanggal & Waktu Booking *</label>' +
+        '<input type="datetime-local" id="fHotelTgl' + nomor + '">' +
+      '</div>' +
+      '<div id="fHotelStatusWrap' + nomor + '" style="display:none">' +
+        '<label>Status Pembayaran *</label>' +
+        '<select id="fHotelStatus' + nomor + '">' +
+          '<option value="">Pilih status...</option>' +
+          '<option value="DP">DP</option>' +
+          '<option value="Lunas">Lunas</option>' +
+        '</select>' +
+      '</div>' +
       '<label>Keterangan</label>' +
       '<input type="text" id="fHotelKet' + nomor +
         '" placeholder="contoh: 1 kamar, 1 malam">' +
@@ -1182,6 +1416,50 @@ const Engine = {
     if (hotel) biaya.value = hotel.harga || 0;
   },
 
+  filterHotelOptions(nomor) {
+    var cariEl = document.getElementById('fHotelCari' + nomor);
+    var selHotel = document.getElementById('fHotelNama' + nomor);
+    if (!cariEl || !selHotel) return;
+
+    var keyword = cariEl.value.toUpperCase();
+    var destEl = document.getElementById('fHotelDest' + nomor);
+    if (!destEl || !destEl.value || destEl.value === '__tambahDest') return;
+
+    var hotels = Core.getMasterHotelByDestinasi(destEl.value);
+    var opsi = '<option value="">Pilih hotel...</option>';
+
+    hotels.forEach(function(h) {
+      if (!keyword || h.nama.toUpperCase().indexOf(keyword) >= 0) {
+        opsi += '<option value="' + h.id + '">' + h.nama +
+          ' (' + Core.formatRupiah(h.harga) + '/malam)</option>';
+      }
+    });
+
+    opsi += '<option value="__tambahHotel">➕ Tambah Hotel Baru</option>';
+    selHotel.innerHTML = opsi;
+  },
+
+  onHotelBiayaChange(nomor) {
+    var biayaEl = document.getElementById('fHotelBiaya' + nomor);
+    var tglWrap = document.getElementById('fHotelTglWrap' + nomor);
+    var statusWrap = document.getElementById('fHotelStatusWrap' + nomor);
+    if (!biayaEl || !tglWrap || !statusWrap) return;
+
+    var biaya = Engine.parseRibuan(biayaEl.value);
+
+    if (biaya > 0) {
+      tglWrap.style.display = 'block';
+      statusWrap.style.display = 'block';
+    } else {
+      tglWrap.style.display = 'none';
+      statusWrap.style.display = 'none';
+      var tglEl = document.getElementById('fHotelTgl' + nomor);
+      var statusEl = document.getElementById('fHotelStatus' + nomor);
+      if (tglEl) tglEl.value = '';
+      if (statusEl) statusEl.value = '';
+    }
+  },
+
   simpanHotel(event, bookingId) {
     event.preventDefault();
     const arusKas = Core.getArusKas();
@@ -1195,7 +1473,7 @@ const Engine = {
       var htlSel  = document.getElementById('fHotelNama' + i).value;
       var htlManual = document.getElementById('fHotelNamaManual' + i);
       const tgl    = document.getElementById('fHotelTgl' + i).value;
-      const biaya  = document.getElementById('fHotelBiaya' + i).value;
+      const biaya  = Engine.parseRibuan(document.getElementById('fHotelBiaya' + i).value);
       const status = document.getElementById('fHotelStatus' + i).value;
       const ket    = document.getElementById('fHotelKet' + i).value.trim();
 
@@ -1235,9 +1513,26 @@ const Engine = {
         hotel = Core.getMasterHotelById(htlId);
       }
 
-      if (!dest || (!htlId || htlId === '__tambahHotel') || !tgl || !status) {
-        alert('Lengkapi semua field Hotel ' + i + ' bertanda *');
+      if (!dest || (!htlId || htlId === '__tambahHotel')) {
+        alert('Lengkapi destinasi dan hotel untuk Hotel ' + i);
         return;
+      }
+
+      var statusFinal = status;
+      var tglFinal = tgl;
+
+      if (biaya > 0) {
+        if (!tgl) {
+          alert('Isi Tanggal & Waktu Booking untuk Hotel ' + i + ' karena biaya sudah diisi');
+          return;
+        }
+        if (!status || status === '') {
+          alert('Pilih Status Pembayaran (DP atau Lunas) untuk Hotel ' + i);
+          return;
+        }
+      } else {
+        statusFinal = 'Belum Bayar';
+        tglFinal = '';
       }
 
       arusKas.push({
@@ -1246,10 +1541,10 @@ const Engine = {
         jenis          : 'pengeluaran',
         kategori       : 'booking hotel',
         jumlah         : Number(biaya) || 0,
-        tanggal        : tgl,
+        tanggal        : tglFinal,
         metode         : '',
         keterangan     : ket || 'Booking hotel',
-        statusBayar    : status,
+        statusBayar    : statusFinal,
         snapshotHotel  : hotel ? {
           nama     : hotel.nama,
           harga    : hotel.harga,
@@ -1257,6 +1552,23 @@ const Engine = {
         } : null,
         snapshotDriver : null
       });
+    }
+
+    var b = Core.getBookingById(bookingId);
+    var durMalam = b && b.snapshotPaket ? Number(b.snapshotPaket.durMalam) || 0 : 0;
+    var jumlahHotel = arusKas.filter(function(a) { return a.bookingId === bookingId && a.kategori === 'booking hotel'; }).length + this.state.hotelCount;
+    var existingHotel = Core.getArusKasByBookingId(bookingId).filter(function(a) { return a.kategori === 'booking hotel'; }).length;
+    var totalHotelSetelahSimpan = existingHotel + this.state.hotelCount;
+
+    if (durMalam > 0 && totalHotelSetelahSimpan < durMalam) {
+      var lanjut = confirm(
+        'Paket tamu ini ' + durMalam + ' malam, tapi data hotel yang kamu isi baru ' + totalHotelSetelahSimpan + '.\n\n' +
+        'Kalau semua malam memang di hotel yang sama, tekan OK untuk simpan.\n' +
+        'Kalau belum lengkap, tekan Batal untuk kembali dan tambah data hotel lagi.\n\n' +
+        '✅ OK = Simpan data hotel sekarang\n' +
+        '❌ Batal = Kembali ke form, belum jadi simpan'
+      );
+      if (!lanjut) return;
     }
 
     Core.saveArusKas(arusKas);
@@ -1293,7 +1605,7 @@ const Engine = {
         '<label>Tanggal & Waktu Sewa *</label>' +
         '<input type="datetime-local" id="fDriverTourTgl" required>' +
         '<label>Biaya Sewa *</label>' +
-        '<input type="number" id="fDriverTourBiaya" min="0" required placeholder="0">' +
+        '<input type="text" inputmode="numeric" id="fDriverTourBiaya" min="0" required placeholder="0">' +
         '<label>Status Pembayaran *</label>' +
         '<select id="fDriverTourStatus" required>' +
           '<option value="">Pilih status...</option>' +
@@ -1338,7 +1650,7 @@ const Engine = {
         '<label>Tanggal & Waktu Sewa *</label>' +
         '<input type="datetime-local" id="fDriverJeepTgl" required>' +
         '<label>Biaya Sewa *</label>' +
-        '<input type="number" id="fDriverJeepBiaya" min="0" required placeholder="0">' +
+        '<input type="text" inputmode="numeric" id="fDriverJeepBiaya" min="0" required placeholder="0">' +
         '<label>Status Pembayaran *</label>' +
         '<select id="fDriverJeepStatus" required>' +
           '<option value="">Pilih status...</option>' +
@@ -1386,7 +1698,7 @@ const Engine = {
   simpanDriver(bookingId, tipe, kategori) {
     const drvId  = document.getElementById('fDriver' + tipe + 'Id').value;
     const tgl    = document.getElementById('fDriver' + tipe + 'Tgl').value;
-    const biaya  = document.getElementById('fDriver' + tipe + 'Biaya').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fDriver' + tipe + 'Biaya').value);
     const status = document.getElementById('fDriver' + tipe + 'Status').value;
     const ket    = document.getElementById('fDriver' + tipe + 'Ket')
                      .value.trim();
@@ -1440,7 +1752,7 @@ const Engine = {
         '<label>Tanggal & Waktu Piknik *</label>' +
         '<input type="datetime-local" id="fPiknikTgl" required>' +
         '<label>Biaya Piknik *</label>' +
-        '<input type="number" id="fPiknikBiaya" min="0" required placeholder="0">' +
+        '<input type="text" inputmode="numeric" id="fPiknikBiaya" min="0" required placeholder="0">' +
         '<label>Status Pembayaran *</label>' +
         '<select id="fPiknikStatus" required>' +
           '<option value="">Pilih status...</option>' +
@@ -1460,7 +1772,7 @@ const Engine = {
   simpanPiknik(event, bookingId) {
     event.preventDefault();
     const tgl    = document.getElementById('fPiknikTgl').value;
-    const biaya  = document.getElementById('fPiknikBiaya').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fPiknikBiaya').value);
     const status = document.getElementById('fPiknikStatus').value;
     const ket    = document.getElementById('fPiknikKet').value.trim();
 
@@ -1511,38 +1823,57 @@ const Engine = {
   editFormHotel(ak) {
     const b = Core.getBookingById(ak.bookingId);
     if (!b) return;
-    const destList = b.destinasi || [];
+
+    var allDest = Core.getDaftarDestinasi();
+    var merged = allDest.slice();
+    (b.destinasi || []).forEach(function(d) {
+      if (merged.indexOf(d) < 0) merged.push(d);
+    });
+    merged.sort();
 
     let opsiDest = '<option value="">Pilih destinasi...</option>';
-    destList.forEach(d => {
+    merged.forEach(function(d) {
       const sel = ak.snapshotHotel && ak.snapshotHotel.destinasi === d ? ' selected' : '';
       opsiDest += '<option value="' + d + '"' + sel + '>' + d + '</option>';
     });
+    opsiDest += '<option value="__tambahDest">➕ Tambah Destinasi Baru</option>';
 
     const hotels = ak.snapshotHotel && ak.snapshotHotel.destinasi
       ? Core.getMasterHotelByDestinasi(ak.snapshotHotel.destinasi) : [];
     let opsiHotel = '<option value="">Pilih hotel...</option>';
-    hotels.forEach(h => {
+    hotels.forEach(function(h) {
       const sel = ak.snapshotHotel && ak.snapshotHotel.nama === h.nama ? ' selected' : '';
-      opsiHotel += '<option value="' + h.id + '"' + sel + '>' + h.nama + '</option>';
+      opsiHotel += '<option value="' + h.id + '"' + sel + '>' + h.nama + ' (' + Core.formatRupiah(h.harga) + '/malam)</option>';
     });
+    opsiHotel += '<option value="__tambahHotel">➕ Tambah Hotel Baru</option>';
+
+    var showPaidFields = (Number(ak.jumlah) || 0) > 0 ? 'block' : 'none';
+    var biayaView = Engine.formatRibuan(ak.jumlah || 0);
 
     const html =
       '<form onsubmit="Engine.updateHotel(event,\'' + ak.id + '\',\'' + ak.bookingId + '\')">' +
         '<label>Destinasi *</label>' +
         '<select id="fHotelDest1" onchange="Engine.onHotelDestChange(1)" required>' + opsiDest + '</select>' +
+        '<input type="text" id="fHotelDestManual1" style="display:none" placeholder="Ketik nama destinasi baru">' +
+        '<label>Cari Hotel</label>' +
+        '<input type="text" id="fHotelCari1" placeholder="Ketik untuk mencari hotel" oninput="Engine.filterHotelOptions(1)">' +
         '<label>Hotel *</label>' +
-        '<select id="fHotelNama1" onchange="Engine.onHotelChange(1)" required>' + opsiHotel + '</select>' +
-        '<label>Tanggal Check-in *</label>' +
-        '<input type="datetime-local" id="fHotelTgl1" required value="' + (ak.tanggal || '') + '">' +
-        '<label>Biaya *</label>' +
-        '<input type="number" id="fHotelBiaya1" min="0" value="' + (ak.jumlah || 0) + '">' +
-        '<label>Status Bayar *</label>' +
-        '<select id="fHotelStatus1" required>' +
-          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-        '</select>' +
+        '<select id="fHotelNama1" onchange="Engine.onHotelNamaChange(1)" required>' + opsiHotel + '</select>' +
+        '<input type="text" id="fHotelNamaManual1" style="display:none" placeholder="Ketik nama hotel baru">' +
+        '<label>Biaya Booking</label>' +
+        '<input type="text" inputmode="numeric" id="fHotelBiaya1" min="0" value="' + biayaView + '" oninput="Engine.onHotelBiayaChange(1)">' +
+        '<div id="fHotelTglWrap1" style="display:' + showPaidFields + '">' +
+          '<label>Tanggal & Waktu Booking *</label>' +
+          '<input type="datetime-local" id="fHotelTgl1" value="' + (ak.tanggal || '') + '">' +
+        '</div>' +
+        '<div id="fHotelStatusWrap1" style="display:' + showPaidFields + '">' +
+          '<label>Status Pembayaran *</label>' +
+          '<select id="fHotelStatus1">' +
+            '<option value="">Pilih status...</option>' +
+            '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
+            '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
+          '</select>' +
+        '</div>' +
         '<label>Keterangan</label>' +
         '<input type="text" id="fHotelKet1" value="' + (ak.keterangan || '') + '">' +
         '<button type="submit" class="btn-simpan">Update Hotel</button>' +
@@ -1552,26 +1883,84 @@ const Engine = {
 
   updateHotel(event, arusKasId, bookingId) {
     event.preventDefault();
-    const dest   = document.getElementById('fHotelDest1').value;
-    const htlId  = document.getElementById('fHotelNama1').value;
+    const destSel = document.getElementById('fHotelDest1').value;
+    const destManual = document.getElementById('fHotelDestManual1');
+    const htlSel  = document.getElementById('fHotelNama1').value;
+    const htlManual = document.getElementById('fHotelNamaManual1');
     const tgl    = document.getElementById('fHotelTgl1').value;
-    const biaya  = document.getElementById('fHotelBiaya1').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fHotelBiaya1').value);
     const status = document.getElementById('fHotelStatus1').value;
     const ket    = document.getElementById('fHotelKet1').value.trim();
 
-    if (!dest || !htlId || !tgl || !status) {
-      alert('Lengkapi semua field bertanda *'); return;
+    var dest = destSel;
+    if (destSel === '__tambahDest') {
+      if (!destManual || !destManual.value.trim()) {
+        alert('Ketik nama destinasi baru');
+        return;
+      }
+      var hasilDest = Core.tambahDestinasi(destManual.value.trim());
+      if (!hasilDest.ok) {
+        alert(hasilDest.msg);
+        return;
+      }
+      dest = hasilDest.nama;
     }
 
-    const hotel = Core.getMasterHotelById(htlId);
+    var hotel = null;
+    var htlId = htlSel;
+    if (htlSel === '__tambahHotel') {
+      if (!htlManual || !htlManual.value.trim()) {
+        alert('Ketik nama hotel baru');
+        return;
+      }
+      var namaHotelBaru = htlManual.value.trim();
+      var newHotelId = Core.generateHotelId();
+      hotel = {
+        id        : newHotelId,
+        nama      : namaHotelBaru,
+        destinasi : dest,
+        harga     : Number(biaya) || 0,
+        keterangan: ket || '',
+        status    : 'Aktif'
+      };
+      var hotelList = Core.getMasterHotel();
+      hotelList.push(hotel);
+      Core.saveMasterHotel(hotelList);
+      htlId = newHotelId;
+    } else {
+      hotel = Core.getMasterHotelById(htlId);
+    }
+
+    if (!dest || (!htlId || htlId === '__tambahHotel')) {
+      alert('Lengkapi destinasi dan hotel');
+      return;
+    }
+
+    var statusFinal = status;
+    var tglFinal = tgl;
+
+    if (biaya > 0) {
+      if (!tgl) {
+        alert('Isi Tanggal & Waktu Booking karena biaya sudah diisi');
+        return;
+      }
+      if (!status || status === '') {
+        alert('Pilih Status Pembayaran (DP atau Lunas)');
+        return;
+      }
+    } else {
+      statusFinal = 'Belum Bayar';
+      tglFinal = '';
+    }
+
     const arusKas = Core.getArusKas();
     const idx = arusKas.findIndex(a => a.id === arusKasId);
     if (idx < 0) { alert('Data tidak ditemukan'); return; }
 
-    arusKas[idx].jumlah      = Number(biaya);
-    arusKas[idx].tanggal     = tgl;
+    arusKas[idx].jumlah      = Number(biaya) || 0;
+    arusKas[idx].tanggal     = tglFinal;
     arusKas[idx].keterangan  = ket || 'Booking hotel';
-    arusKas[idx].statusBayar = status;
+    arusKas[idx].statusBayar = statusFinal;
     arusKas[idx].snapshotHotel = hotel ? {
       nama: hotel.nama, harga: hotel.harga, destinasi: hotel.destinasi
     } : arusKas[idx].snapshotHotel;
@@ -1596,7 +1985,7 @@ const Engine = {
         '<label>Tanggal *</label>' +
         '<input type="datetime-local" id="fDriverTourTgl" required value="' + (ak.tanggal || '') + '">' +
         '<label>Biaya *</label>' +
-        '<input type="number" id="fDriverTourBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
+        '<input type="text" inputmode="numeric" id="fDriverTourBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
         '<label>Status Bayar *</label>' +
         '<select id="fDriverTourStatus" required>' +
           '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
@@ -1625,7 +2014,7 @@ const Engine = {
         '<label>Tanggal *</label>' +
         '<input type="datetime-local" id="fDriverJeepTgl" required value="' + (ak.tanggal || '') + '">' +
         '<label>Biaya *</label>' +
-        '<input type="number" id="fDriverJeepBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
+        '<input type="text" inputmode="numeric" id="fDriverJeepBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
         '<label>Status Bayar *</label>' +
         '<select id="fDriverJeepStatus" required>' +
           '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
@@ -1644,7 +2033,7 @@ const Engine = {
     const tipe   = kategori === 'sewa driver tour' ? 'Tour' : 'Jeep';
     const drvId  = document.getElementById('fDriver' + tipe + 'Id').value;
     const tgl    = document.getElementById('fDriver' + tipe + 'Tgl').value;
-    const biaya  = document.getElementById('fDriver' + tipe + 'Biaya').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fDriver' + tipe + 'Biaya').value);
     const status = document.getElementById('fDriver' + tipe + 'Status').value;
     const ket    = document.getElementById('fDriver' + tipe + 'Ket').value.trim();
 
@@ -1676,7 +2065,7 @@ const Engine = {
         '<label>Tanggal *</label>' +
         '<input type="datetime-local" id="fPiknikTgl" required value="' + (ak.tanggal || '') + '">' +
         '<label>Biaya *</label>' +
-        '<input type="number" id="fPiknikBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
+        '<input type="text" inputmode="numeric" id="fPiknikBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
         '<label>Status Bayar *</label>' +
         '<select id="fPiknikStatus" required>' +
           '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
@@ -1693,7 +2082,7 @@ const Engine = {
   updatePiknik(event, arusKasId, bookingId) {
     event.preventDefault();
     const tgl    = document.getElementById('fPiknikTgl').value;
-    const biaya  = document.getElementById('fPiknikBiaya').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fPiknikBiaya').value);
     const status = document.getElementById('fPiknikStatus').value;
     const ket    = document.getElementById('fPiknikKet').value.trim();
 
@@ -1797,8 +2186,12 @@ const Engine = {
         '<div id="fOrderInfoPaket">' + infoPaket + '</div>' +
         '<div id="fOrderFasilitas">' + fasHtml + '</div>' +
         '<label>Harga Paket *</label>' +
-        '<input type="number" id="fOrderHarga" min="0" required value="' +
-          (b.totalHarga || 0) + '" oninput="Engine.updateSisaBayarOrder()">' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+          '<input type="text" inputmode="numeric" id="fOrderHarga" min="0" required value="' +
+            Engine.formatRibuan(b.totalHarga || 0) + '" oninput="Engine.updateSisaBayarOrder()" style="flex:1">' +
+          '<button type="button" style="padding:8px 12px;border:none;background:#e0f0ff;border-radius:10px;font-size:16px;cursor:pointer" ' +
+            'onclick="Engine.bukaKalkulator(\'fOrderHarga\')">🧮</button>' +
+        '</div>' +
         '<label>Tanggal Berangkat *</label>' +
         '<input type="date" id="fOrderTglBerangkat" onchange="Engine.onTglBerangkatChange()" required value="' +
           (b.tglBerangkat || '') + '">' +
@@ -1831,7 +2224,7 @@ const Engine = {
     if (!hargaInput || !sisaEl || !statusEl) return;
 
     const keu   = Core.hitungKeuanganBooking(bookingId);
-    const total = Number(hargaInput.value) || 0;
+    const total = Engine.parseRibuan(hargaInput.value);
     const bayar = keu.masuk;
     const sisa  = total - bayar;
 
@@ -1849,7 +2242,7 @@ const Engine = {
     const hp      = document.getElementById('fOrderHP').value.trim();
     const pax     = document.getElementById('fOrderPax').value;
     const paketId = document.getElementById('fOrderPaket').value;
-    const harga   = document.getElementById('fOrderHarga').value;
+    const harga   = Engine.parseRibuan(document.getElementById('fOrderHarga').value);
     const tglBrkt = document.getElementById('fOrderTglBerangkat').value;
 
     if (!nama || !hp || !pax || !paketId || !harga || !tglBrkt) {
@@ -2460,90 +2853,116 @@ const Engine = {
   // FORM MASTER PAKET
   // ---------------------------------
   bukaFormMasterPaket(editId) {
+    this.renderFormPaket(editId || null, 'master');
+  },
+
+  hapusMasterPaket(id) {
+    if (!confirm('Yakin hapus paket ini?')) return;
+    var list = Core.getMasterPaket().filter(function(p) { return p.id !== id; });
+    Core.saveMasterPaket(list);
+    this.showHalaman('masterPaket');
+  },
+
+  // ---------------------------------
+  // RENDER FORM PAKET (SHARED)
+  // ---------------------------------
+  renderFormPaket(editId, mode) {
     var isEdit = !!editId;
     var paket  = isEdit ? Core.getMasterPaketById(editId) : null;
-    var id     = isEdit ? paket.id : Core.generatePaketId();
     var destList = Core.getDaftarDestinasi();
 
     var destOptions = destList.map(function(d) {
       var checked = isEdit && paket.destinasi && paket.destinasi.includes(d)
         ? ' checked' : '';
       return '<label class="checkbox"><input type="checkbox" ' +
-        'name="fPaketDest" value="' + d + '"' + checked + '> ' +
+        'name="fPaketDest" value="' + d + '"' + checked +
+        ' onchange="Engine.generateNamaPaket()"> ' +
         d + '</label>';
     }).join('');
+
+    var namaAuto = '';
+    if (isEdit && paket) {
+      namaAuto = paket.nama || '';
+    }
+
+    var btnLabel = mode === 'booking' ? 'SIMPAN & PILIH PAKET' : 'SIMPAN';
+    var submitFn = 'Engine.simpanPaketShared(event,\'' +
+      (isEdit ? editId : '') + '\',\'' + mode + '\')';
 
     var html =
-      '<form onsubmit="Engine.simpanMasterPaket(event,\'' +
-        (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
-        '<label>ID Paket</label>' +
-        '<input type="text" value="' + id + '" readonly>' +
-        '<label>Nama Paket *</label>' +
-        '<input type="text" id="fPaketNama" required placeholder="contoh: Bromo + Ijen" ' +
-          'value="' + (isEdit ? paket.nama : '') + '">' +
-        '<label>Pilih Destinasi *</label>' +
+      '<form onsubmit="' + submitFn + '" oninput="Engine.tandaiDirty()">' +
+        '<label>PILIH DESTINASI *</label>' +
         '<div class="fasilitas-group" id="fPaketDestList">' + destOptions + '</div>' +
+        '<div class="field-error" id="errPaketDest">PILIH MINIMAL 1 DESTINASI</div>' +
         '<button type="button" class="btn-tambah" style="margin-top:4px" ' +
-          'onclick="Engine.tambahDestDariPaket()">➕ Tambah Destinasi Baru</button>' +
-        '<label>Durasi (hari) *</label>' +
+          'onclick="Engine.tambahDestDariPaket()">\u27a5 TAMBAH DESTINASI BARU</button>' +
+
+        '<label>DURASI (HARI) *</label>' +
         '<input type="number" id="fPaketHari" min="1" required placeholder="3" ' +
-          'value="' + (isEdit ? paket.durHari : '') + '">' +
-        '<label>Durasi (malam) *</label>' +
+          'value="' + (isEdit ? paket.durHari : '') + '" ' +
+          'oninput="Engine.generateNamaPaket()">' +
+        '<div class="field-error" id="errPaketHari">DURASI HARI WAJIB DIISI</div>' +
+
+        '<label>DURASI (MALAM) *</label>' +
         '<input type="number" id="fPaketMalam" min="0" required placeholder="2" ' +
-          'value="' + (isEdit ? paket.durMalam : '') + '">' +
-        '<button type="submit" class="btn-simpan">Simpan</button>' +
+          'value="' + (isEdit ? paket.durMalam : '') + '" ' +
+          'oninput="Engine.generateNamaPaket()">' +
+        '<div class="field-error" id="errPaketMalam">DURASI MALAM WAJIB DIISI</div>' +
+
+        '<label>NAMA PAKET *</label>' +
+        '<input type="text" id="fPaketNama" readonly ' +
+          'value="' + namaAuto + '" ' +
+          'style="background:#f3f4f6;color:#374151">' +
+        '<div class="field-error" id="errPaketNama">NAMA PAKET BELUM TERBENTUK</div>' +
+
+        '<button type="submit" class="btn-simpan" id="btnSimpanPaket" disabled>' +
+          btnLabel + '</button>' +
       '</form>';
 
-    this.bukaModal('📦 ' + (isEdit ? 'Edit' : 'Tambah') + ' Paket Tour', html);
+    var judul = '\ud83d\udce6 ' + (isEdit ? 'EDIT' : 'TAMBAH') + ' PAKET TOUR';
+    this.bukaModal(judul, html);
+
+    if (isEdit) {
+      setTimeout(function() {
+        Engine.generateNamaPaket();
+      }, 100);
+    }
   },
 
-  tambahDestDariPaket() {
-    var nama = prompt('Ketik nama destinasi baru:');
-    if (nama === null) return;
-    if (!nama.trim()) {
-      alert('Nama destinasi tidak boleh kosong');
-      return;
-    }
-    var hasil = Core.tambahDestinasi(nama.trim());
-    if (!hasil.ok) {
-      alert(hasil.msg);
-      return;
-    }
-    var checkedNow = [];
-    document.querySelectorAll('input[name="fPaketDest"]:checked').forEach(function(el) {
-      checkedNow.push(el.value);
-    });
-    checkedNow.push(hasil.nama);
-    var destList = Core.getDaftarDestinasi();
-    var newHtml = destList.map(function(d) {
-      var checked = checkedNow.includes(d) ? ' checked' : '';
-      return '<label class="checkbox"><input type="checkbox" ' +
-        'name="fPaketDest" value="' + d + '"' + checked + '> ' +
-        d + '</label>';
-    }).join('');
-    var container = document.getElementById('fPaketDestList');
-    if (container) container.innerHTML = newHtml;
-
-  },
-
-  simpanMasterPaket(event, editId) {
+  // ---------------------------------
+  // SIMPAN PAKET (SHARED)
+  // ---------------------------------
+  simpanPaketShared(event, editId, mode) {
     event.preventDefault();
     var isEdit = !!editId;
-    var nama   = document.getElementById('fPaketNama').value.trim();
-    var hari   = document.getElementById('fPaketHari').value;
-    var malam  = document.getElementById('fPaketMalam').value;
+
+    if (!this.validasiFormPaket()) {
+      alert('LENGKAPI SEMUA FIELD YANG BERTANDA *');
+      return;
+    }
+
+    var nama  = document.getElementById('fPaketNama').value.trim();
+    var hari  = document.getElementById('fPaketHari').value;
+    var malam = document.getElementById('fPaketMalam').value;
 
     var destChecked = document.querySelectorAll('input[name="fPaketDest"]:checked');
     var destinasi = [];
     destChecked.forEach(function(el) { destinasi.push(el.value); });
+    destinasi.sort();
 
-    if (!nama || !hari || destinasi.length === 0) {
-      alert('Lengkapi semua field bertanda *');
-      return;
-    }
+    var rincian =
+      'RINCIAN PAKET YANG AKAN DISIMPAN:\n\n' +
+      'NAMA PAKET:\n' + nama + '\n\n' +
+      'DESTINASI:\n' + destinasi.join(', ') + '\n\n' +
+      'DURASI:\n' + hari + ' HARI / ' + malam + ' MALAM\n\n' +
+      '\u2705 OK = SIMPAN PAKET\n' +
+      '\u274c BATAL = KEMBALI KE FORM';
 
+    if (!confirm(rincian)) return;
+
+    var newId = isEdit ? editId : Core.generatePaketId();
     var data = {
-      id       : isEdit ? editId : Core.generatePaketId(),
+      id       : newId,
       nama     : nama,
       destinasi: destinasi,
       durHari  : Number(hari),
@@ -2560,90 +2979,142 @@ const Engine = {
     }
     Core.saveMasterPaket(list);
     this.state.dirtyForm = false;
-    this.tutupModal();
-    this.showHalaman('masterPaket');
+
+    if (mode === 'booking') {
+      var savedDraft = this.state.draftBooking || {};
+      this.tutupModal();
+      this.bukaFormOrder();
+
+      setTimeout(function() {
+        Engine.restoreDraftBooking(savedDraft);
+        var sel = document.getElementById('fOrderPaket');
+        if (sel) {
+          sel.value = newId;
+          Engine.onPaketChange();
+        }
+        Engine.state.draftBooking = null;
+      }, 100);
+    } else {
+      this.tutupModal();
+      this.showHalaman('masterPaket');
+    }
   },
 
-  hapusMasterPaket(id) {
-    if (!confirm('Yakin hapus paket ini?')) return;
-    var list = Core.getMasterPaket().filter(function(p) { return p.id !== id; });
-    Core.saveMasterPaket(list);
-    this.showHalaman('masterPaket');
+  // ---------------------------------
+  // GENERATE NAMA PAKET OTOMATIS
+  // ---------------------------------
+  generateNamaPaket() {
+    var destChecked = document.querySelectorAll('input[name="fPaketDest"]:checked');
+    var destinasi = [];
+    destChecked.forEach(function(el) { destinasi.push(el.value); });
+    destinasi.sort();
+
+    var hari  = document.getElementById('fPaketHari');
+    var malam = document.getElementById('fPaketMalam');
+    var nama  = document.getElementById('fPaketNama');
+    if (!nama) return;
+
+    var hariVal  = hari ? (Number(hari.value) || 0) : 0;
+    var malamVal = malam ? (Number(malam.value) || 0) : 0;
+
+    if (destinasi.length === 0 || hariVal === 0) {
+      nama.value = '';
+      return;
+    }
+
+    var result = destinasi.join(', ') + ' ' + hariVal + 'D' + malamVal + 'N';
+    nama.value = result.toUpperCase();
+
+    this.validasiFormPaket();
+  },
+
+  // ---------------------------------
+  // VALIDASI FORM PAKET
+  // ---------------------------------
+  validasiFormPaket() {
+    var valid = true;
+
+    var destChecked = document.querySelectorAll('input[name="fPaketDest"]:checked');
+    var errDest = document.getElementById('errPaketDest');
+    if (destChecked.length === 0) {
+      if (errDest) errDest.classList.add('show');
+      valid = false;
+    } else {
+      if (errDest) errDest.classList.remove('show');
+    }
+
+    var hari = document.getElementById('fPaketHari');
+    var errHari = document.getElementById('errPaketHari');
+    if (!hari || !hari.value || Number(hari.value) < 1) {
+      if (errHari) errHari.classList.add('show');
+      valid = false;
+    } else {
+      if (errHari) errHari.classList.remove('show');
+    }
+
+    var malam = document.getElementById('fPaketMalam');
+    var errMalam = document.getElementById('errPaketMalam');
+    if (!malam || malam.value === '' || Number(malam.value) < 0) {
+      if (errMalam) errMalam.classList.add('show');
+      valid = false;
+    } else {
+      if (errMalam) errMalam.classList.remove('show');
+    }
+
+    var nama = document.getElementById('fPaketNama');
+    var errNama = document.getElementById('errPaketNama');
+    if (!nama || !nama.value.trim()) {
+      if (errNama) errNama.classList.add('show');
+      valid = false;
+    } else {
+      if (errNama) errNama.classList.remove('show');
+    }
+
+    var btnSimpan = document.getElementById('btnSimpanPaket');
+    if (btnSimpan) btnSimpan.disabled = !valid;
+
+    return valid;
+  },
+
+  // ---------------------------------
+  // TAMBAH DESTINASI DARI FORM PAKET
+  // ---------------------------------
+  tambahDestDariPaket() {
+    var nama = prompt('KETIK NAMA DESTINASI BARU:');
+    if (nama === null) return;
+    if (!nama.trim()) {
+      alert('NAMA DESTINASI TIDAK BOLEH KOSONG');
+      return;
+    }
+    var hasil = Core.tambahDestinasi(nama.trim());
+    if (!hasil.ok) {
+      alert(hasil.msg);
+      return;
+    }
+    var checkedNow = [];
+    document.querySelectorAll('input[name="fPaketDest"]:checked').forEach(function(el) {
+      checkedNow.push(el.value);
+    });
+    checkedNow.push(hasil.nama);
+    var destList = Core.getDaftarDestinasi();
+    var newHtml = destList.map(function(d) {
+      var checked = checkedNow.includes(d) ? ' checked' : '';
+      return '<label class="checkbox"><input type="checkbox" ' +
+        'name="fPaketDest" value="' + d + '"' + checked +
+        ' onchange="Engine.generateNamaPaket()"> ' +
+        d + '</label>';
+    }).join('');
+    var container = document.getElementById('fPaketDestList');
+    if (container) container.innerHTML = newHtml;
+    Engine.generateNamaPaket();
   },
 
   // ---------------------------------
   // FORM MASTER PAKET DARI BOOKING
   // ---------------------------------
   bukaFormMasterPaketDariBooking() {
-    var id = Core.generatePaketId();
-    var destList = Core.getDaftarDestinasi();
-
-    var destOptions = destList.map(function(d) {
-      return '<label class="checkbox"><input type="checkbox" ' +
-        'name="fPaketDest" value="' + d + '"> ' +
-        d + '</label>';
-    }).join('');
-
-    var html =
-      '<form onsubmit="Engine.simpanMasterPaketDariBooking(event)" oninput="Engine.tandaiDirty()">' +
-        '<label>ID Paket</label>' +
-        '<input type="text" value="' + id + '" readonly>' +
-        '<label>Nama Paket *</label>' +
-        '<input type="text" id="fPaketNama" required placeholder="contoh: Bromo + Ijen">' +
-        '<label>Pilih Destinasi *</label>' +
-        '<div class="fasilitas-group" id="fPaketDestList">' + destOptions + '</div>' +
-        '<button type="button" class="btn-tambah" style="margin-top:4px" ' +
-          'onclick="Engine.tambahDestDariPaket()">➕ Tambah Destinasi Baru</button>' +
-        '<label>Durasi (hari) *</label>' +
-        '<input type="number" id="fPaketHari" min="1" required placeholder="3">' +
-        '<label>Durasi (malam) *</label>' +
-        '<input type="number" id="fPaketMalam" min="0" required placeholder="2">' +
-        '<button type="submit" class="btn-simpan">Simpan & Pilih Paket</button>' +
-      '</form>';
-
-    this.bukaModal('📦 Tambah Paket Baru', html);
-  },
-
-  simpanMasterPaketDariBooking(event) {
-    event.preventDefault();
-    var nama  = document.getElementById('fPaketNama').value.trim();
-    var hari  = document.getElementById('fPaketHari').value;
-    var malam = document.getElementById('fPaketMalam').value;
-
-    var destChecked = document.querySelectorAll('input[name="fPaketDest"]:checked');
-    var destinasi = [];
-    destChecked.forEach(function(el) { destinasi.push(el.value); });
-
-    if (!nama || !hari || destinasi.length === 0) {
-      alert('Lengkapi semua field bertanda *');
-      return;
-    }
-
-    var newId = Core.generatePaketId();
-    var data = {
-      id       : newId,
-      nama     : nama,
-      destinasi: destinasi,
-      durHari  : Number(hari),
-      durMalam : Number(malam),
-      status   : 'Aktif'
-    };
-
-    var list = Core.getMasterPaket();
-    list.push(data);
-    Core.saveMasterPaket(list);
-
-    this.state.dirtyForm = false;
-    this.tutupModal();
-    this.bukaFormOrder();
-
-    setTimeout(function() {
-      var sel = document.getElementById('fOrderPaket');
-      if (sel) {
-        sel.value = newId;
-        Engine.onPaketChange();
-      }
-    }, 100);
+    this.simpanDraftBooking();
+    this.renderFormPaket(null, 'booking');
   },
 
   // ---------------------------------
@@ -2790,7 +3261,7 @@ const Engine = {
         '<select id="fHotelDestM" onchange="Engine.onDestMasterChange()" required>' + destOptions + '</select>' +
         '<input type="text" id="fHotelDestManual" style="display:none" placeholder="Ketik nama destinasi baru">' +
         '<label>Harga Standar / Malam *</label>' +
-        '<input type="number" id="fHotelHargaM" min="0" required placeholder="0" ' +
+        '<input type="text" inputmode="numeric" id="fHotelHargaM" min="0" required placeholder="0" ' +
           'value="' + (isEdit ? hotel.harga : '') + '">' +
         '<label>Keterangan</label>' +
         '<input type="text" id="fHotelKetM" placeholder="contoh: View Bromo, breakfast 2 orang" ' +
@@ -2821,7 +3292,7 @@ const Engine = {
     var nama   = document.getElementById('fHotelNamaM').value.trim();
     var destSel = document.getElementById('fHotelDestM').value;
     var destManual = document.getElementById('fHotelDestManual').value.trim();
-    var harga  = document.getElementById('fHotelHargaM').value;
+    var harga  = Engine.parseRibuan(document.getElementById('fHotelHargaM').value);
     var ket    = document.getElementById('fHotelKetM').value.trim();
     var status = document.getElementById('fHotelStatusM').value;
 

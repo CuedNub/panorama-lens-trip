@@ -1,4 +1,4 @@
 {
-  "version": "1.1.8",
-  "notes": "Tambah mode blok browser agar app hanya dipakai lewat PWA terinstal"
+  "version": "1.2.0",
+  "notes": "Tambah kalkulator harga, uppercase input, format ribuan, dan perbaikan form hotel serta paket"
 }

@@ -1206,3 +1206,171 @@ html, body {
 .card-actions .btn-hapus:active {
   background: #ffb0b0;
 }
+
+/* ── AUTO UPPERCASE TAMPILAN ── */
+label,
+.card-header,
+.card-info,
+.card-detail,
+.checklist-title,
+.checklist-item span,
+.info-paket,
+.section-divider,
+.sidebar-nav a,
+.nama-halaman,
+.lock-title,
+.pengaturan-section h3,
+.empty-state p,
+.tabs button,
+.badge {
+  text-transform: uppercase;
+}
+
+/* ── POPUP KALKULATOR HARGA ── */
+.calc-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.calc-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  max-width: 340px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.calc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.calc-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.calc-info-btn {
+  background: #e0f0ff;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.calc-info-btn:active {
+  background: #b0d8ff;
+}
+.calc-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.calc-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  box-sizing: border-box;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+.calc-input:focus {
+  border-color: var(--warna-tema, #16a34a);
+}
+.calc-result {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f0fdf4;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #166534;
+  min-height: 20px;
+}
+.calc-result.error {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.calc-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.calc-btn-pakai {
+  flex: 1;
+  padding: 10px;
+  background: var(--warna-tema, #16a34a);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.calc-btn-pakai:active {
+  opacity: 0.8;
+}
+.calc-btn-batal {
+  flex: 1;
+  padding: 10px;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.calc-btn-batal:active {
+  background: #e5e7eb;
+}
+.calc-tutorial {
+  margin-top: 12px;
+  padding: 12px;
+  background: #eff6ff;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.6;
+  display: none;
+}
+.calc-tutorial.show {
+  display: block;
+}
+
+/* ── VALIDASI FORM MERAH ── */
+.field-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 2px;
+  margin-bottom: 6px;
+  display: none;
+}
+.field-error.show {
+  display: block;
+}
+
+/* ── TOMBOL SIMPAN DISABLED ── */
+.btn-simpan:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.btn-simpan:disabled:active {
+  opacity: 0.7;
+}
