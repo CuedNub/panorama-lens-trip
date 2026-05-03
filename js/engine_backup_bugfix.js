@@ -901,7 +901,7 @@ const Engine = {
   // ---------------------------------
   bukaFormOrder() {
     const id       = Core.generateBookingId();
-    const pakets   = Core.getMasterPaket();
+    const pakets   = Core.getMasterPaket().filter(p => p.status === 'Aktif');
     const settings = Core.getSettings();
     const tempat   = settings.tempatJemput || [];
 
@@ -3107,57 +3107,6 @@ const Engine = {
     var container = document.getElementById('fPaketDestList');
     if (container) container.innerHTML = newHtml;
     Engine.generateNamaPaket();
-  },
-
-  simpanDraftBooking() {
-    this.state.draftBooking = {
-      nama    : (document.getElementById('fOrderNama') || {}).value || '',
-      hp      : (document.getElementById('fOrderHP') || {}).value || '',
-      pax     : (document.getElementById('fOrderPax') || {}).value || '',
-      negara  : (document.getElementById('fOrderNegara') || {}).value || '',
-      negaraManual : (document.getElementById('fOrderNegaraManual') || {}).value || '',
-      harga   : (document.getElementById('fOrderHarga') || {}).value || '',
-      tglBrkt : (document.getElementById('fOrderTglBerangkat') || {}).value || '',
-      tglPlg  : (document.getElementById('fOrderTglPulang') || {}).value || '',
-      flight  : (document.getElementById('fOrderFlight') || {}).value || '',
-      tiba    : (document.getElementById('fOrderTiba') || {}).value || '',
-      bandara : (document.getElementById('fOrderBandara') || {}).value || '',
-      bayar   : (document.getElementById('fOrderBayar') || {}).value || ''
-    };
-  },
-
-  restoreDraftBooking(draft) {
-    if (!draft) return;
-    var fields = {
-      fOrderNama: draft.nama,
-      fOrderHP: draft.hp,
-      fOrderPax: draft.pax,
-      fOrderNegara: draft.negara,
-      fOrderNegaraManual: draft.negaraManual,
-      fOrderHarga: draft.harga,
-      fOrderTglBerangkat: draft.tglBrkt,
-      fOrderTglPulang: draft.tglPlg,
-      fOrderFlight: draft.flight,
-      fOrderTiba: draft.tiba,
-      fOrderBandara: draft.bandara,
-      fOrderBayar: draft.bayar
-    };
-
-    for (var id in fields) {
-      var el = document.getElementById(id);
-      if (el && fields[id] !== undefined && fields[id] !== null) {
-        el.value = fields[id];
-      }
-    }
-
-    if (draft.negara === '__lainnya') {
-      var man = document.getElementById('fOrderNegaraManual');
-      if (man) man.style.display = 'block';
-    }
-
-    if (document.getElementById('fOrderHarga') || document.getElementById('fOrderBayar')) {
-      Engine.updateSisaBayarOrder();
-    }
   },
 
   // ---------------------------------

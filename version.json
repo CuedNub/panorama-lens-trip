@@ -1,4 +1,4 @@
 {
-  "version": "1.2.0",
-  "notes": "Tambah kalkulator harga, uppercase input, format ribuan, dan perbaikan form hotel serta paket"
+  "version": "1.2.1",
+  "notes": "Perbaiki tombol Tambah Paket Baru yang tidak berfungsi dari Form Booking"
 }
