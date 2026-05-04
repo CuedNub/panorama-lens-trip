@@ -28,9 +28,7 @@ const Engine = {
     expandedArusKas : null,
     hotelCount      : 1,
     isFormOpen      : false,
-    dirtyForm       : false,
-    modalLayer2     : null,
-    tambahKendaraanCtx: null
+    dirtyForm       : false
   },
 
   // ---------------------------------
@@ -1580,299 +1578,48 @@ const Engine = {
   },
 
   // ---------------------------------
-  // MODAL LAYER 2 (untuk popup di atas modal utama)
-  // ---------------------------------
-
-  bukaModal2(judul, html) {
-    var overlay = document.createElement('div');
-    overlay.className = 'modal-overlay modal-layer2';
-    overlay.innerHTML =
-      '<div class="modal">' +
-        '<div class="modal-header">' + judul + '</div>' +
-        '<div class="modal-body">' + html + '</div>' +
-      '</div>';
-    document.body.appendChild(overlay);
-    this.state.modalLayer2 = overlay;
-  },
-
-  tutupModal2() {
-    if (this.state.modalLayer2) {
-      this.state.modalLayer2.remove();
-      this.state.modalLayer2 = null;
-    }
-  },
-
-  // ---------------------------------
-  // POPUP TAMBAH DRIVER BARU
-  // ---------------------------------
-
-  bukaPopupTambahDriver(tipe) {
-    var html =
-      '<form onsubmit="Engine.simpanPopupDriver(event,\'' + tipe + '\')">' +
-        '<label>Nama Driver *</label>' +
-        '<input type="text" id="fPopupDriverNama" required placeholder="contoh: Pak Anto">' +
-        '<label>No. HP / WA *</label>' +
-        '<input type="tel" id="fPopupDriverHP" required placeholder="08xxxxxxxxxx">' +
-        '<button type="submit" class="btn-simpan">Simpan</button>' +
-        '<button type="button" class="btn-batal" onclick="Engine.tutupModal2()">Batal</button>' +
-      '</form>';
-    this.bukaModal2('➕ Tambah Driver ' + tipe, html);
-  },
-
-  simpanPopupDriver(event, tipe) {
-    event.preventDefault();
-    var nama = document.getElementById('fPopupDriverNama').value.trim();
-    var hp   = document.getElementById('fPopupDriverHP').value.trim();
-    if (!nama || !hp) { alert('Lengkapi semua field'); return; }
-    var list = Core.getMasterDriver();
-    var data = {
-      id     : Core.generateDriverId(),
-      nama   : nama,
-      noHP   : hp,
-      status : 'Aktif'
-    };
-    list.push(data);
-    Core.saveMasterDriver(list);
-    this.tutupModal2();
-    this.refreshDriverDropdown(tipe);
-    alert('Driver "' + nama + '" ditambahkan');
-  },
-
-  refreshDriverDropdown(tipe, idx) {
-    var suffix = idx !== undefined ? '_' + idx : '';
-    var idEl = document.getElementById('fDriver' + tipe + 'Id' + suffix);
-    var drivers = Core.getMasterDriverByTipe(tipe);
-
-    if (idEl && idEl.tagName === 'SELECT') {
-      var curVal = idEl.value;
-      var html = '<option value="">Pilih driver...</option>';
-      drivers.forEach(function(d) {
-        html += '<option value="' + d.id + '"' + (d.id === curVal ? ' selected' : '') + '>' +
-          d.nama + ' (' + d.noHP + ')</option>';
-      });
-      html += '<option value="__tambahDriver">➕ Tambah Driver Baru</option>';
-      idEl.innerHTML = html;
-      if (curVal) idEl.value = curVal;
-      Engine.onSewaDriverSelect(tipe, idx);
-    }
-  },
-
-  onSewaDriverSelect(tipe, idx) {
-    var suffix = idx !== undefined ? '_' + idx : '';
-    var sel = document.getElementById('fDriver' + tipe + 'Id' + suffix);
-    var hpEl = document.getElementById('fDriver' + tipe + 'HP' + suffix);
-    if (!sel) return;
-
-    if (sel.value === '__tambahDriver') {
-      sel.value = '';
-      Engine.bukaPopupTambahDriver(tipe);
-      return;
-    }
-
-    var driver = Core.getMasterDriverById(sel.value);
-    if (hpEl) {
-      hpEl.value = driver ? driver.noHP : '';
-    }
-  },
-
-    // ---------------------------------
-  // POPUP TAMBAH KENDARAAN BARU + DETEKSI MIRIP
-  // ---------------------------------
-
-  bukaPopupTambahKendaraan(tipe, idx) {
-    this.state.tambahKendaraanCtx = { tipe: tipe, idx: idx };
-    var html =
-      '<form onsubmit="Engine.simpanPopupKendaraan(event)">' +
-        '<label>Nama Kendaraan *</label>' +
-        '<input type="text" id="fPopupKendaraanNama" required placeholder="contoh: Hiace">' +
-        '<div id="fPopupKendaraanSaran" style="font-size:12px;color:#666;margin:6px 0;min-height:18px"></div>' +
-        '<button type="submit" class="btn-simpan">Simpan</button>' +
-        '<button type="button" class="btn-batal" onclick="Engine.tutupModal2()">Batal</button>' +
-      '</form>';
-    this.bukaModal2('➕ Tambah Kendaraan', html);
-    var inp = document.getElementById('fPopupKendaraanNama');
-    if (inp) {
-      inp.addEventListener('input', function() { Engine.cekKendaraanMirip(); });
-    }
-  },
-
-  cekKendaraanMirip() {
-    var inp = document.getElementById('fPopupKendaraanNama');
-    var saranEl = document.getElementById('fPopupKendaraanSaran');
-    if (!inp || !saranEl) return;
-    var val = Core.capitalizeNama(inp.value);
-    if (!val) { saranEl.innerHTML = ''; return; }
-    var list = Core.getDaftarKendaraan();
-    var mirip = list.find(function(k) {
-      return k.toLowerCase() === val.toLowerCase() ||
-        k.toLowerCase().includes(val.toLowerCase()) ||
-        val.toLowerCase().includes(k.toLowerCase());
-    });
-    if (mirip) {
-      saranEl.innerHTML = '⚠️ Mirip dengan: <b>' + mirip + '</b> — pakai yang ada / tetap baru?';
-    } else {
-      saranEl.innerHTML = '';
-    }
-  },
-
-  simpanPopupKendaraan(event) {
-    event.preventDefault();
-    var inp = document.getElementById('fPopupKendaraanNama');
-    if (!inp) return;
-    var nama = Core.capitalizeNama(inp.value.trim());
-    if (!nama) { alert('Nama kendaraan tidak boleh kosong'); return; }
-    var ctx = this.state.tambahKendaraanCtx;
-    if (!ctx) { this.tutupModal2(); return; }
-    var hasil = Core.tambahKendaraan(nama);
-    if (!hasil.ok) {
-      if (confirm(hasil.msg + '\n\nPakai yang sudah ada?')) {
-        this.pilihKendaraanSudahAda(ctx.tipe, ctx.idx, nama);
-      }
-      return;
-    }
-    this.tutupModal2();
-    this.refreshKendaraanDropdown(ctx.tipe, ctx.idx, hasil.nama);
-    alert('Kendaraan "' + hasil.nama + '" ditambahkan');
-  },
-
-  pilihKendaraanSudahAda(tipe, idx, nama) {
-    this.tutupModal2();
-    this.refreshKendaraanDropdown(tipe, idx, nama);
-  },
-
-  refreshKendaraanDropdown(tipe, idx, pilihNama) {
-    var suffix = idx !== undefined ? '_' + idx : '';
-    var sel = document.getElementById('fDriver' + tipe + 'Kendaraan' + suffix);
-    if (!sel) return;
-    var list = Core.getDaftarKendaraan();
-    var html = '<option value="">Pilih kendaraan...</option>';
-    list.forEach(function(k) {
-      html += '<option value="' + k + '"' + (k === pilihNama ? ' selected' : '') + '>' + k + '</option>';
-    });
-    html += '<option value="__tambahKdr">➕ Tambah Kendaraan Baru</option>';
-    sel.innerHTML = html;
-    if (pilihNama) sel.value = pilihNama;
-  },
-
-  onKendaraanSewaChange(tipe, idx) {
-    var suffix = idx !== undefined ? '_' + idx : '';
-    var sel = document.getElementById('fDriver' + tipe + 'Kendaraan' + suffix);
-    if (!sel) return;
-    if (sel.value === '__tambahKdr') {
-      sel.value = '';
-      this.bukaPopupTambahKendaraan(tipe, idx);
-    }
-  },
-
-    // ---------------------------------
-  // HELPER UI DRIVER
-  // ---------------------------------
-
-  onBiayaDriverChange(tipe, idx) {
-    var suffix = idx !== undefined ? '_' + idx : '';
-    var biayaEl = document.getElementById('fDriver' + tipe + 'Biaya' + suffix);
-    var tglWrap = document.getElementById('wrapTgl' + tipe + suffix);
-    var statusWrap = document.getElementById('wrapStatus' + tipe + suffix);
-    var tglEl = document.getElementById('fDriver' + tipe + 'Tgl' + suffix);
-    var statusEl = document.getElementById('fDriver' + tipe + 'Status' + suffix);
-
-    if (!biayaEl) return;
-
-    var raw = biayaEl.value.replace(/[^0-9]/g, '');
-    biayaEl.value = raw ? Engine.formatRibuan(Number(raw)) : '';
-
-    var show = Number(raw) > 0;
-    if (tglWrap) tglWrap.style.display = show ? 'block' : 'none';
-    if (statusWrap) statusWrap.style.display = show ? 'block' : 'none';
-
-    if (!show) {
-      if (tglEl) tglEl.value = '';
-      if (statusEl) statusEl.value = 'Belum Bayar';
-    }
-  },
-
-  uppercaseField(el) {
-    if (el) el.value = el.value.toUpperCase();
-  },
-
-  // ---------------------------------
   // FORM DRIVER TOUR
   // ---------------------------------
   bukaFormDriverTour(bookingId) {
     const b = Core.getBookingById(bookingId);
     if (!b) return;
-
     const drivers = Core.getMasterDriverByTipe('Driver Tour');
-    const kendaraanList = Core.getDaftarKendaraan();
 
     let opsiDriver = '<option value="">Pilih driver...</option>';
     drivers.forEach(d => {
-      opsiDriver += '<option value="' + d.id + '">' + d.nama + ' (' + d.noHP + ')</option>';
+      opsiDriver += '<option value="' + d.id + '">' + d.nama +
+        ' (' + d.kendaraan + ')</option>';
     });
-    opsiDriver += '<option value="__tambahDriver">➕ Tambah Driver Baru</option>';
-
-    let opsiKendaraan = '<option value="">Pilih kendaraan...</option>';
-    kendaraanList.forEach(k => {
-      opsiKendaraan += '<option value="' + k + '">' + k + '</option>';
-    });
-    opsiKendaraan += '<option value="__tambahKdr">➕ Tambah Kendaraan Baru</option>';
 
     const html =
       '<form onsubmit="Engine.simpanDriverTour(event,\'' + bookingId +
         '\')" oninput="Engine.tandaiDirty()">' +
-        '<input type="hidden" id="fDriverTourBookingId" value="' + b.id + '">' +
-
+        '<label>ID Booking</label>' +
+        '<input type="text" value="' + b.id + '" readonly>' +
         '<label>Nama Tamu</label>' +
         '<input type="text" value="' + b.namaTamu + '" readonly>' +
-
-        '<label>Tipe Driver</label>' +
-        '<input type="text" value="DRIVER TOUR" readonly>' +
-
-        '<label>Nama Driver *</label>' +
-        '<select id="fDriverTourId" onchange="Engine.onSewaDriverSelect(\'Tour\')" required>' +
-          opsiDriver +
+        '<label>Pilih Driver *</label>' +
+        '<select id="fDriverTourId" onchange="Engine.onDriverChange(\'Tour\')" ' +
+          'required>' + opsiDriver + '</select>' +
+        '<div id="fDriverTourInfo"></div>' +
+        '<label>Tanggal & Waktu Sewa *</label>' +
+        '<input type="datetime-local" id="fDriverTourTgl" required>' +
+        '<label>Biaya Sewa *</label>' +
+        '<input type="text" inputmode="numeric" id="fDriverTourBiaya" min="0" required placeholder="0">' +
+        '<label>Status Pembayaran *</label>' +
+        '<select id="fDriverTourStatus" required>' +
+          '<option value="">Pilih status...</option>' +
+          '<option value="Lunas">Lunas</option>' +
+          '<option value="Belum Bayar">Belum Bayar</option>' +
+          '<option value="DP">DP</option>' +
         '</select>' +
-
-        '<label>No. HP</label>' +
-        '<input type="tel" id="fDriverTourHP" readonly placeholder="Otomatis dari driver">' +
-
-        '<label>Jenis Kendaraan *</label>' +
-        '<select id="fDriverTourKendaraan" onchange="Engine.onKendaraanSewaChange(\'Tour\')" required>' +
-          opsiKendaraan +
-        '</select>' +
-
-        '<label>Biaya Sewa</label>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<input type="text" inputmode="numeric" id="fDriverTourBiaya" ' +
-            'placeholder="0" style="flex:1" ' +
-            'oninput="Engine.onBiayaDriverChange(\'Tour\')">' +
-          '<button type="button" onclick="Engine.bukaKalkulator(\'fDriverTourBiaya\')">🧮</button>' +
-        '</div>' +
-
-        '<div id="wrapTglTour" style="display:none">' +
-          '<label>Tanggal & Waktu Sewa</label>' +
-          '<input type="datetime-local" id="fDriverTourTgl">' +
-        '</div>' +
-
-        '<div id="wrapStatusTour" style="display:none">' +
-          '<label>Status Pembayaran</label>' +
-          '<select id="fDriverTourStatus">' +
-            '<option value="Belum Bayar">Belum Bayar</option>' +
-            '<option value="DP">DP</option>' +
-            '<option value="Lunas">Lunas</option>' +
-          '</select>' +
-        '</div>' +
-
         '<label>Keterangan</label>' +
         '<input type="text" id="fDriverTourKet" ' +
-          'placeholder="contoh: INCLUDE BENSIN 3 HARI" ' +
-          'oninput="Engine.uppercaseField(this)">' +
-
+          'placeholder="contoh: Include bensin 3 hari">' +
         '<button type="submit" class="btn-simpan">Simpan</button>' +
       '</form>';
 
-    this.bukaModal('🚗 Sewa Driver Tour', html);
-    this.onBiayaDriverChange('Tour');
+    this.bukaModal('🚗 Driver Tour', html);
   },
 
   // ---------------------------------
@@ -1881,152 +1628,61 @@ const Engine = {
   bukaFormDriverJeep(bookingId) {
     const b = Core.getBookingById(bookingId);
     if (!b) return;
-
     const drivers = Core.getMasterDriverByTipe('Driver Jeep');
 
     let opsiDriver = '<option value="">Pilih driver...</option>';
     drivers.forEach(d => {
-      opsiDriver += '<option value="' + d.id + '">' + d.nama + ' (' + d.noHP + ')</option>';
+      opsiDriver += '<option value="' + d.id + '">' + d.nama +
+        ' (' + d.kendaraan + ')</option>';
     });
-    opsiDriver += '<option value="__tambahDriver">➕ Tambah Driver Baru</option>';
 
     const html =
       '<form onsubmit="Engine.simpanDriverJeep(event,\'' + bookingId +
         '\')" oninput="Engine.tandaiDirty()">' +
-        '<input type="hidden" id="fDriverJeepBookingId" value="' + b.id + '">' +
-
+        '<label>ID Booking</label>' +
+        '<input type="text" value="' + b.id + '" readonly>' +
         '<label>Nama Tamu</label>' +
         '<input type="text" value="' + b.namaTamu + '" readonly>' +
-
-        '<label>Tipe Driver</label>' +
-        '<input type="text" value="DRIVER JEEP" readonly>' +
-
-        '<label>Nama Driver *</label>' +
-        '<select id="fDriverJeepId" onchange="Engine.onSewaDriverSelect(\'Jeep\')" required>' +
-          opsiDriver +
+        '<label>Pilih Driver Jeep *</label>' +
+        '<select id="fDriverJeepId" onchange="Engine.onDriverChange(\'Jeep\')" ' +
+          'required>' + opsiDriver + '</select>' +
+        '<div id="fDriverJeepInfo"></div>' +
+        '<label>Tanggal & Waktu Sewa *</label>' +
+        '<input type="datetime-local" id="fDriverJeepTgl" required>' +
+        '<label>Biaya Sewa *</label>' +
+        '<input type="text" inputmode="numeric" id="fDriverJeepBiaya" min="0" required placeholder="0">' +
+        '<label>Status Pembayaran *</label>' +
+        '<select id="fDriverJeepStatus" required>' +
+          '<option value="">Pilih status...</option>' +
+          '<option value="Lunas">Lunas</option>' +
+          '<option value="Belum Bayar">Belum Bayar</option>' +
+          '<option value="DP">DP</option>' +
         '</select>' +
-
-        '<label>No. HP</label>' +
-        '<input type="tel" id="fDriverJeepHP" readonly placeholder="Otomatis dari driver">' +
-
-        '<label>Kendaraan</label>' +
-        '<input type="text" id="fDriverJeepKendaraan" value="Jeep" readonly>' +
-
-        '<label>Biaya Sewa</label>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<input type="text" inputmode="numeric" id="fDriverJeepBiaya" ' +
-            'placeholder="0" style="flex:1" ' +
-            'oninput="Engine.onBiayaDriverChange(\'Jeep\')">' +
-          '<button type="button" onclick="Engine.bukaKalkulator(\'fDriverJeepBiaya\')">🧮</button>' +
-        '</div>' +
-
-        '<div id="wrapTglJeep" style="display:none">' +
-          '<label>Tanggal & Waktu Sewa</label>' +
-          '<input type="datetime-local" id="fDriverJeepTgl">' +
-        '</div>' +
-
-        '<div id="wrapStatusJeep" style="display:none">' +
-          '<label>Status Pembayaran</label>' +
-          '<select id="fDriverJeepStatus">' +
-            '<option value="Belum Bayar">Belum Bayar</option>' +
-            '<option value="DP">DP</option>' +
-            '<option value="Lunas">Lunas</option>' +
-          '</select>' +
-        '</div>' +
-
         '<label>Keterangan</label>' +
         '<input type="text" id="fDriverJeepKet" ' +
-          'placeholder="contoh: SUNRISE BROMO" ' +
-          'oninput="Engine.uppercaseField(this)">' +
-
-        '<div style="display:flex;gap:12px;margin-top:12px">' +
-          '<button type="submit" class="btn-simpan" style="flex:1">✅ Simpan</button>' +
-          '<button type="button" class="btn-simpan" style="flex:1;background:#2196F3" ' +
-            'onclick="Engine.simpanJeepDanTambahLagi(\'' + bookingId + '\')">🚙 Tambah Jeep</button>' +
-        '</div>' +
+          'placeholder="contoh: Jeep untuk sunrise Bromo">' +
+        '<button type="submit" class="btn-simpan">Simpan</button>' +
       '</form>';
 
-    this.bukaModal('🚙 Sewa Driver Jeep', html);
-    this.onBiayaDriverChange('Jeep');
+    this.bukaModal('🚙 Driver Jeep', html);
   },
 
-  simpanDriverTour(event, bookingId) {
-    event.preventDefault();
-    this.simpanDriver(bookingId, 'Tour', 'sewa driver tour');
-  },
+  onDriverChange(tipe) {
+    const selId  = 'fDriver' + tipe + 'Id';
+    const infoId = 'fDriver' + tipe + 'Info';
+    const drvId  = document.getElementById(selId).value;
+    const infoEl = document.getElementById(infoId);
+    if (!infoEl) return;
 
-  simpanDriverJeep(event, bookingId) {
-    event.preventDefault();
-    this.prosesSimanJeep(bookingId, false);
-  },
+    const driver = Core.getMasterDriverById(drvId);
+    if (!driver) { infoEl.innerHTML = ''; return; }
 
-  simpanJeepDanTambahLagi(bookingId) {
-    this.prosesSimanJeep(bookingId, true);
-  },
-
-  prosesSimanJeep(bookingId, tambahLagi) {
-    var idEl     = document.getElementById('fDriverJeepId');
-    var hpEl     = document.getElementById('fDriverJeepHP');
-    var kdrEl    = document.getElementById('fDriverJeepKendaraan');
-    var biayaEl  = document.getElementById('fDriverJeepBiaya');
-    var tglEl    = document.getElementById('fDriverJeepTgl');
-    var statusEl = document.getElementById('fDriverJeepStatus');
-    var ketEl    = document.getElementById('fDriverJeepKet');
-
-    var drvId    = idEl ? idEl.value.trim() : '';
-    var biaya    = biayaEl ? Engine.parseRibuan(biayaEl.value) : 0;
-    var tgl      = tglEl ? tglEl.value : '';
-    var ket      = ketEl ? ketEl.value.trim().toUpperCase() : '';
-    var kendaraan = kdrEl ? kdrEl.value : 'Jeep';
-    var status   = biaya > 0 ? (statusEl ? statusEl.value : '') : 'Belum Bayar';
-
-    if (!drvId) {
-      alert('Pilih driver dari daftar, atau tambah driver baru dulu');
-      return;
-    }
-
-    if (biaya > 0 && (!tgl || !status)) {
-      alert('Tanggal dan status bayar wajib diisi jika biaya lebih dari 0');
-      return;
-    }
-
-    var driver = Core.getMasterDriverById(drvId);
-    if (!driver) {
-      alert('Data driver tidak ditemukan');
-      return;
-    }
-
-    var arusKas = Core.getArusKas();
-    arusKas.push({
-      id             : Core.generateArusKasId(),
-      bookingId      : bookingId,
-      jenis          : 'pengeluaran',
-      kategori       : 'sewa driver jeep',
-      jumlah         : Number(biaya || 0),
-      tanggal        : biaya > 0 ? tgl : '',
-      metode         : '',
-      keterangan     : ket || 'SEWA DRIVER JEEP',
-      statusBayar    : status,
-      snapshotHotel  : null,
-      snapshotDriver : {
-        nama      : driver.nama,
-        noHP      : hpEl && hpEl.value ? hpEl.value.trim() : driver.noHP,
-        kendaraan : kendaraan
-      }
-    });
-    Core.saveArusKas(arusKas);
-    this.state.dirtyForm = false;
-    this.state.expandedBooking = bookingId;
-    this.tutupModal();
-
-    if (tambahLagi) {
-      var self = this;
-      setTimeout(function() {
-        self.bukaFormDriverJeep(bookingId);
-      }, 200);
-    } else {
-      this.showHalaman('booking');
-    }
+    infoEl.innerHTML =
+      '<div class="info-driver">' +
+        '👤 Nama: ' + driver.nama + '<br>' +
+        '📱 No. HP: ' + driver.noHP + '<br>' +
+        '🚐 Kendaraan: ' + driver.kendaraan +
+      '</div>';
   },
 
   simpanDriverTour(event, bookingId) {
@@ -2040,66 +1696,37 @@ const Engine = {
   },
 
   simpanDriver(bookingId, tipe, kategori) {
-    const idEl        = document.getElementById('fDriver' + tipe + 'Id');
-    const namaEl      = document.getElementById('fDriver' + tipe + 'Nama');
-    const hpEl        = document.getElementById('fDriver' + tipe + 'HP');
-    const kendaraanEl = document.getElementById('fDriver' + tipe + 'Kendaraan');
-    const tglEl       = document.getElementById('fDriver' + tipe + 'Tgl');
-    const biayaEl     = document.getElementById('fDriver' + tipe + 'Biaya');
-    const statusEl    = document.getElementById('fDriver' + tipe + 'Status');
-    const ketEl       = document.getElementById('fDriver' + tipe + 'Ket');
+    const drvId  = document.getElementById('fDriver' + tipe + 'Id').value;
+    const tgl    = document.getElementById('fDriver' + tipe + 'Tgl').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fDriver' + tipe + 'Biaya').value);
+    const status = document.getElementById('fDriver' + tipe + 'Status').value;
+    const ket    = document.getElementById('fDriver' + tipe + 'Ket')
+                     .value.trim();
 
-    const drvId = idEl ? idEl.value.trim() : '';
-    const biaya = biayaEl ? Engine.parseRibuan(biayaEl.value) : 0;
-    const tgl   = tglEl ? tglEl.value : '';
-    const ket   = ketEl ? ketEl.value.trim().toUpperCase() : '';
-
-    const kendaraan = kendaraanEl
-      ? kendaraanEl.value
-      : (tipe === 'Jeep' ? 'Jeep' : '');
-
-    const status = biaya > 0
-      ? (statusEl ? statusEl.value : '')
-      : 'Belum Bayar';
-
-    if (!drvId) {
-      alert('Pilih driver dari daftar, atau tambah driver baru dulu');
+    if (!drvId || !tgl || !biaya || !status) {
+      alert('Lengkapi semua field bertanda *');
       return;
     }
 
-    if (kendaraanEl && !kendaraan) {
-      alert('Pilih jenis kendaraan');
-      return;
-    }
-
-    if (biaya > 0 && (!tgl || !status)) {
-      alert('Tanggal dan status bayar wajib diisi jika biaya lebih dari 0');
-      return;
-    }
-
-    const driver = Core.getMasterDriverById(drvId);
-    if (!driver) {
-      alert('Data driver tidak ditemukan');
-      return;
-    }
-
+    const driver  = Core.getMasterDriverById(drvId);
     const arusKas = Core.getArusKas();
+
     arusKas.push({
       id             : Core.generateArusKasId(),
       bookingId      : bookingId,
       jenis          : 'pengeluaran',
       kategori       : kategori,
-      jumlah         : Number(biaya || 0),
-      tanggal        : biaya > 0 ? tgl : '',
+      jumlah         : Number(biaya),
+      tanggal        : tgl,
       metode         : '',
-      keterangan     : ket || kategori.toUpperCase(),
+      keterangan     : ket || kategori,
       statusBayar    : status,
       snapshotHotel  : null,
-      snapshotDriver : {
+      snapshotDriver : driver ? {
         nama      : driver.nama,
-        noHP      : hpEl && hpEl.value ? hpEl.value.trim() : driver.noHP,
-        kendaraan : kendaraan || driver.kendaraan || (tipe === 'Jeep' ? 'Jeep' : '')
-      }
+        noHP      : driver.noHP,
+        kendaraan : driver.kendaraan
+      } : null
     });
 
     Core.saveArusKas(arusKas);
@@ -2339,95 +1966,34 @@ const Engine = {
     } : arusKas[idx].snapshotHotel;
 
     Core.saveArusKas(arusKas);
-
-    if (kategori === 'sewa driver jeep') {
-      this.tutupModal();
-      this.state.expandedBooking = bookingId;
-      var self = this;
-      setTimeout(function() {
-        var konfHtml =
-          '<div style="text-align:center;padding:16px">' +
-            '<p style="font-size:16px;margin-bottom:16px">Data jeep berhasil diupdate.<br>Tambah jeep lagi?</p>' +
-            '<div style="display:flex;gap:12px;justify-content:center">' +
-              '<button class="btn-simpan" onclick="Engine.tutupModal();Engine.bukaFormDriverJeep(\'' + bookingId + '\')">🚙 Tambah Jeep</button>' +
-              '<button class="btn-batal" onclick="Engine.tutupModal();Engine.state.expandedBooking=\'' + bookingId + '\';Engine.showHalaman(\'booking\')">✅ Simpan</button>' +
-            '</div>' +
-          '</div>';
-        self.bukaModal('🚙 Driver Jeep', konfHtml);
-      }, 200);
-    } else {
-      this.tutupModal();
-      this.showHalaman('booking');
-    }
+    this.tutupModal();
+    this.showHalaman('booking');
   },
 
   editFormDriverTour(ak) {
     const drivers = Core.getMasterDriverByTipe('Driver Tour');
-    const kendaraanList = Core.getDaftarKendaraan();
-    const snap = ak.snapshotDriver || {};
-
     let opsiDriver = '<option value="">Pilih driver...</option>';
     drivers.forEach(d => {
-      const sel = snap.nama === d.nama ? ' selected' : '';
-      opsiDriver += '<option value="' + d.id + '"' + sel + '>' + d.nama + ' (' + d.noHP + ')</option>';
+      const sel = ak.snapshotDriver && ak.snapshotDriver.nama === d.nama ? ' selected' : '';
+      opsiDriver += '<option value="' + d.id + '"' + sel + '>' + d.nama + ' - ' + d.kendaraan + '</option>';
     });
-    opsiDriver += '<option value="__tambahDriver">➕ Tambah Driver Baru</option>';
-
-    let opsiKendaraan = '<option value="">Pilih kendaraan...</option>';
-    kendaraanList.forEach(k => {
-      const sel = snap.kendaraan === k ? ' selected' : '';
-      opsiKendaraan += '<option value="' + k + '"' + sel + '>' + k + '</option>';
-    });
-    opsiKendaraan += '<option value="__tambahKdr">➕ Tambah Kendaraan Baru</option>';
-
-    var showBiaya = ak.jumlah > 0;
-    var biayaFormatted = ak.jumlah ? Engine.formatRibuan(ak.jumlah) : '';
 
     const html =
       '<form onsubmit="Engine.updateDriver(event,\'' + ak.id + '\',\'' + ak.bookingId + '\',\'sewa driver tour\')">' +
-
-        '<label>Tipe Driver</label>' +
-        '<input type="text" value="DRIVER TOUR" readonly>' +
-
-        '<label>Nama Driver *</label>' +
-        '<select id="fDriverTourId" onchange="Engine.onSewaDriverSelect(\'Tour\')" required>' +
-          opsiDriver +
+        '<label>Driver Tour *</label>' +
+        '<select id="fDriverTourId" required>' + opsiDriver + '</select>' +
+        '<label>Tanggal *</label>' +
+        '<input type="datetime-local" id="fDriverTourTgl" required value="' + (ak.tanggal || '') + '">' +
+        '<label>Biaya *</label>' +
+        '<input type="text" inputmode="numeric" id="fDriverTourBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
+        '<label>Status Bayar *</label>' +
+        '<select id="fDriverTourStatus" required>' +
+          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
+          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
+          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
         '</select>' +
-
-        '<label>No. HP</label>' +
-        '<input type="tel" id="fDriverTourHP" readonly value="' + (snap.noHP || '') + '">' +
-
-        '<label>Jenis Kendaraan *</label>' +
-        '<select id="fDriverTourKendaraan" onchange="Engine.onKendaraanSewaChange(\'Tour\')" required>' +
-          opsiKendaraan +
-        '</select>' +
-
-        '<label>Biaya Sewa</label>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<input type="text" inputmode="numeric" id="fDriverTourBiaya" ' +
-            'value="' + biayaFormatted + '" placeholder="0" style="flex:1" ' +
-            'oninput="Engine.onBiayaDriverChange(\'Tour\')">' +
-          '<button type="button" onclick="Engine.bukaKalkulator(\'fDriverTourBiaya\')">🧮</button>' +
-        '</div>' +
-
-        '<div id="wrapTglTour" style="display:' + (showBiaya ? 'block' : 'none') + '">' +
-          '<label>Tanggal & Waktu Sewa</label>' +
-          '<input type="datetime-local" id="fDriverTourTgl" value="' + (ak.tanggal || '') + '">' +
-        '</div>' +
-
-        '<div id="wrapStatusTour" style="display:' + (showBiaya ? 'block' : 'none') + '">' +
-          '<label>Status Pembayaran</label>' +
-          '<select id="fDriverTourStatus">' +
-            '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-            '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-            '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-          '</select>' +
-        '</div>' +
-
         '<label>Keterangan</label>' +
-        '<input type="text" id="fDriverTourKet" value="' + (ak.keterangan || '') + '" ' +
-          'oninput="Engine.uppercaseField(this)">' +
-
+        '<input type="text" id="fDriverTourKet" value="' + (ak.keterangan || '') + '">' +
         '<button type="submit" class="btn-simpan">Update Driver Tour</button>' +
       '</form>';
     this.bukaModal('✏️ Edit Driver Tour', html);
@@ -2435,61 +2001,28 @@ const Engine = {
 
   editFormDriverJeep(ak) {
     const drivers = Core.getMasterDriverByTipe('Driver Jeep');
-    const snap = ak.snapshotDriver || {};
-
     let opsiDriver = '<option value="">Pilih driver...</option>';
     drivers.forEach(d => {
-      const sel = snap.nama === d.nama ? ' selected' : '';
-      opsiDriver += '<option value="' + d.id + '"' + sel + '>' + d.nama + ' (' + d.noHP + ')</option>';
+      const sel = ak.snapshotDriver && ak.snapshotDriver.nama === d.nama ? ' selected' : '';
+      opsiDriver += '<option value="' + d.id + '"' + sel + '>' + d.nama + ' - ' + d.kendaraan + '</option>';
     });
-    opsiDriver += '<option value="__tambahDriver">➕ Tambah Driver Baru</option>';
-
-    var showBiaya = ak.jumlah > 0;
-    var biayaFormatted = ak.jumlah ? Engine.formatRibuan(ak.jumlah) : '';
 
     const html =
       '<form onsubmit="Engine.updateDriver(event,\'' + ak.id + '\',\'' + ak.bookingId + '\',\'sewa driver jeep\')">' +
-
-        '<label>Tipe Driver</label>' +
-        '<input type="text" value="DRIVER JEEP" readonly>' +
-
-        '<label>Nama Driver *</label>' +
-        '<select id="fDriverJeepId" onchange="Engine.onSewaDriverSelect(\'Jeep\')" required>' +
-          opsiDriver +
+        '<label>Driver Jeep *</label>' +
+        '<select id="fDriverJeepId" required>' + opsiDriver + '</select>' +
+        '<label>Tanggal *</label>' +
+        '<input type="datetime-local" id="fDriverJeepTgl" required value="' + (ak.tanggal || '') + '">' +
+        '<label>Biaya *</label>' +
+        '<input type="text" inputmode="numeric" id="fDriverJeepBiaya" min="0" required value="' + (ak.jumlah || 0) + '">' +
+        '<label>Status Bayar *</label>' +
+        '<select id="fDriverJeepStatus" required>' +
+          '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
+          '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
+          '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
         '</select>' +
-
-        '<label>No. HP</label>' +
-        '<input type="tel" id="fDriverJeepHP" readonly value="' + (snap.noHP || '') + '">' +
-
-        '<label>Kendaraan</label>' +
-        '<input type="text" id="fDriverJeepKendaraan" value="Jeep" readonly>' +
-
-        '<label>Biaya Sewa</label>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<input type="text" inputmode="numeric" id="fDriverJeepBiaya" ' +
-            'value="' + biayaFormatted + '" placeholder="0" style="flex:1" ' +
-            'oninput="Engine.onBiayaDriverChange(\'Jeep\')">' +
-          '<button type="button" onclick="Engine.bukaKalkulator(\'fDriverJeepBiaya\')">🧮</button>' +
-        '</div>' +
-
-        '<div id="wrapTglJeep" style="display:' + (showBiaya ? 'block' : 'none') + '">' +
-          '<label>Tanggal & Waktu Sewa</label>' +
-          '<input type="datetime-local" id="fDriverJeepTgl" value="' + (ak.tanggal || '') + '">' +
-        '</div>' +
-
-        '<div id="wrapStatusJeep" style="display:' + (showBiaya ? 'block' : 'none') + '">' +
-          '<label>Status Pembayaran</label>' +
-          '<select id="fDriverJeepStatus">' +
-            '<option value="Belum Bayar"' + (ak.statusBayar === 'Belum Bayar' ? ' selected' : '') + '>Belum Bayar</option>' +
-            '<option value="DP"' + (ak.statusBayar === 'DP' ? ' selected' : '') + '>DP</option>' +
-            '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
-          '</select>' +
-        '</div>' +
-
         '<label>Keterangan</label>' +
-        '<input type="text" id="fDriverJeepKet" value="' + (ak.keterangan || '') + '" ' +
-          'oninput="Engine.uppercaseField(this)">' +
-
+        '<input type="text" id="fDriverJeepKet" value="' + (ak.keterangan || '') + '">' +
         '<button type="submit" class="btn-simpan">Update Driver Jeep</button>' +
       '</form>';
     this.bukaModal('✏️ Edit Driver Jeep', html);
@@ -2499,51 +2032,27 @@ const Engine = {
     event.preventDefault();
     const tipe   = kategori === 'sewa driver tour' ? 'Tour' : 'Jeep';
     const drvId  = document.getElementById('fDriver' + tipe + 'Id').value;
+    const tgl    = document.getElementById('fDriver' + tipe + 'Tgl').value;
     const biaya  = Engine.parseRibuan(document.getElementById('fDriver' + tipe + 'Biaya').value);
-    const tgl    = document.getElementById('fDriver' + tipe + 'Tgl');
-    const status = document.getElementById('fDriver' + tipe + 'Status');
-    const ket    = document.getElementById('fDriver' + tipe + 'Ket').value.trim().toUpperCase();
-    const hpEl   = document.getElementById('fDriver' + tipe + 'HP');
-    const kdrEl  = document.getElementById('fDriver' + tipe + 'Kendaraan');
+    const status = document.getElementById('fDriver' + tipe + 'Status').value;
+    const ket    = document.getElementById('fDriver' + tipe + 'Ket').value.trim();
 
-    var tglVal    = tgl ? tgl.value : '';
-    var statusVal = biaya > 0 ? (status ? status.value : '') : 'Belum Bayar';
-    var kendaraan = kdrEl ? kdrEl.value : (tipe === 'Jeep' ? 'Jeep' : '');
-
-    if (!drvId) {
-      alert('Pilih driver dari daftar');
-      return;
+    if (!drvId || !tgl || !biaya || !status) {
+      alert('Lengkapi semua field bertanda *'); return;
     }
 
-    if (kdrEl && !kendaraan) {
-      alert('Pilih jenis kendaraan');
-      return;
-    }
-
-    if (biaya > 0 && (!tglVal || !statusVal)) {
-      alert('Tanggal dan status bayar wajib diisi jika biaya lebih dari 0');
-      return;
-    }
-
-    const driver = Core.getMasterDriverById(drvId);
-    if (!driver) {
-      alert('Data driver tidak ditemukan');
-      return;
-    }
-
+    const driver  = Core.getMasterDriverById(drvId);
     const arusKas = Core.getArusKas();
     const idx = arusKas.findIndex(a => a.id === arusKasId);
     if (idx < 0) { alert('Data tidak ditemukan'); return; }
 
-    arusKas[idx].jumlah      = Number(biaya || 0);
-    arusKas[idx].tanggal     = biaya > 0 ? tglVal : '';
-    arusKas[idx].keterangan  = ket || kategori.toUpperCase();
-    arusKas[idx].statusBayar = statusVal;
-    arusKas[idx].snapshotDriver = {
-      nama      : driver.nama,
-      noHP      : hpEl && hpEl.value ? hpEl.value.trim() : driver.noHP,
-      kendaraan : kendaraan || driver.kendaraan || (tipe === 'Jeep' ? 'Jeep' : '')
-    };
+    arusKas[idx].jumlah      = Number(biaya);
+    arusKas[idx].tanggal     = tgl;
+    arusKas[idx].keterangan  = ket || kategori;
+    arusKas[idx].statusBayar = status;
+    arusKas[idx].snapshotDriver = driver ? {
+      nama: driver.nama, noHP: driver.noHP, kendaraan: driver.kendaraan
+    } : arusKas[idx].snapshotDriver;
 
     Core.saveArusKas(arusKas);
     this.tutupModal();
@@ -2906,11 +2415,20 @@ const Engine = {
   // HALAMAN MASTER DRIVER
   // ---------------------------------
   renderMasterDriver(konten) {
+    const filter = this.state.filterMaster.driver || 'Semua';
     const searchInput = this.state.filterMaster.draftSearchDriver || '';
     const search = (this.state.filterMaster.searchDriver || '').toLowerCase();
     let data = Core.getMasterDriver();
 
+    if (filter === 'Tour') data = data.filter(d => d.tipe === 'Driver Tour');
+    else if (filter === 'Jeep') data = data.filter(d => d.tipe === 'Driver Jeep');
     if (search) data = data.filter(d => d.nama.toLowerCase().includes(search));
+
+    const tabs = ['Semua','Tour','Jeep'];
+    let tabsHtml = tabs.map(t =>
+      '<button class="tab' + (filter === t ? ' aktif' : '') +
+      '" onclick="Engine.setFilterMaster(\'driver\',\'' + t + '\')">' + t + '</button>'
+    ).join('');
 
     let cardsHtml = '';
     if (data.length === 0) {
@@ -2927,6 +2445,7 @@ const Engine = {
         'oninput="Engine.setDraftSearchMaster(\'draftSearchDriver\',this.value)">' +
         '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchDriver\',\'searchDriver\')">🔍</button>' +
       '</div>' +
+      '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterDriver()">+</button>';
   },
@@ -2937,6 +2456,7 @@ const Engine = {
       '<div class="card-header"><span>' + d.id + '</span>' +
         '<span class="badge ' + (d.status === 'Aktif' ? 'badge-hijau' : 'badge-abu') + '">' + d.status + '</span></div>' +
       '<div class="card-info">' + d.nama + '<br>' +
+        '🚐 ' + d.kendaraan + ' | ' + d.tipe + '<br>' +
         '📱 ' + d.noHP + '</div>';
 
     if (exp) {
@@ -3656,6 +3176,14 @@ const Engine = {
     var driver = isEdit ? Core.getMasterDriverById(editId) : null;
     var id     = isEdit ? driver.id : Core.generateDriverId();
 
+    var kdrList = Core.getDaftarKendaraan();
+    var kendaraanOptions = '<option value="">Pilih kendaraan...</option>';
+    kdrList.forEach(function(k) {
+      var sel = isEdit && driver.kendaraan === k ? ' selected' : '';
+      kendaraanOptions += '<option value="' + k + '"' + sel + '>' + k + '</option>';
+    });
+    kendaraanOptions += '<option value="__tambahKdr">➕ Tambah Kendaraan Baru</option>';
+
     var html =
       '<form onsubmit="Engine.simpanMasterDriver(event,\'' +
         (isEdit ? editId : '') + '\')" oninput="Engine.tandaiDirty()">' +
@@ -3667,6 +3195,17 @@ const Engine = {
         '<label>No. HP / WA *</label>' +
         '<input type="tel" id="fDriverHP" required placeholder="08xxxxxxxxxx" ' +
           'value="' + (isEdit ? driver.noHP : '') + '">' +
+        '<label>Jenis Kendaraan *</label>' +
+        '<select id="fDriverKendaraan" onchange="Engine.onKendaraanChange()" required>' +
+          kendaraanOptions +
+        '</select>' +
+        '<input type="text" id="fDriverKendaraanManual" style="display:none" ' +
+          'placeholder="Ketik jenis kendaraan baru">' +
+        '<label>Tipe Driver *</label>' +
+        '<select id="fDriverTipe" required>' +
+          '<option value="Driver Tour"' + (isEdit && driver.tipe === 'Driver Tour' ? ' selected' : '') + '>Driver Tour</option>' +
+          '<option value="Driver Jeep"' + (isEdit && driver.tipe === 'Driver Jeep' ? ' selected' : '') + '>Driver Jeep</option>' +
+        '</select>' +
         '<label>Status *</label>' +
         '<select id="fDriverStatus" required>' +
           '<option value="Aktif"' + (isEdit && driver.status === 'Aktif' ? ' selected' : '') + '>Aktif</option>' +
@@ -3678,25 +3217,51 @@ const Engine = {
     this.bukaModal('🚗 ' + (isEdit ? 'Edit' : 'Tambah') + ' Driver', html);
   },
 
-
+  onKendaraanChange() {
+    var sel = document.getElementById('fDriverKendaraan');
+    var man = document.getElementById('fDriverKendaraanManual');
+    if (sel && man) {
+      man.style.display = sel.value === '__tambahKdr' ? 'block' : 'none';
+      if (sel.value !== '__tambahKdr') man.value = '';
+    }
+  },
 
   simpanMasterDriver(event, editId) {
     event.preventDefault();
-    var isEdit = !!editId;
-    var nama   = document.getElementById('fDriverNama').value.trim();
-    var hp     = document.getElementById('fDriverHP').value.trim();
-    var status = document.getElementById('fDriverStatus').value;
+    var isEdit    = !!editId;
+    var nama      = document.getElementById('fDriverNama').value.trim();
+    var hp        = document.getElementById('fDriverHP').value.trim();
+    var kdrSel    = document.getElementById('fDriverKendaraan').value;
+    var kdrManual = document.getElementById('fDriverKendaraanManual').value.trim();
+    var tipe      = document.getElementById('fDriverTipe').value;
+    var status    = document.getElementById('fDriverStatus').value;
 
-    if (!nama || !hp) {
+    var kendaraan = kdrSel;
+    if (kdrSel === '__tambahKdr') {
+      if (!kdrManual) {
+        alert('Ketik jenis kendaraan baru');
+        return;
+      }
+      var hasil = Core.tambahKendaraan(kdrManual);
+      if (!hasil.ok) {
+        alert(hasil.msg);
+        return;
+      }
+      kendaraan = hasil.nama;
+    }
+
+    if (!nama || !hp || !kendaraan) {
       alert('Lengkapi semua field bertanda *');
       return;
     }
 
     var data = {
-      id     : isEdit ? editId : Core.generateDriverId(),
-      nama   : nama,
-      noHP   : hp,
-      status : status
+      id       : isEdit ? editId : Core.generateDriverId(),
+      nama     : nama,
+      noHP     : hp,
+      kendaraan: kendaraan,
+      tipe     : tipe,
+      status   : status
     };
 
     var list = Core.getMasterDriver();

@@ -24,7 +24,7 @@
 // KONSTANTA APLIKASI
 // ---------------------------------
 const APP_NAME_DEFAULT = 'Panorama Lens Trip';
-const APP_VERSION      = '1.3.0';
+const APP_VERSION      = '1.2.1';
 const PREFIX_DEFAULT   = 'PL';
 
 // ---------------------------------
@@ -173,9 +173,8 @@ const Core = {
   },
 
   getMasterDriverByTipe(tipe) {
-    // tipe tidak lagi dipakai sejak v2 — semua driver aktif bisa dipilih di form sewa
     return this.getMasterDriver().filter(
-      d => d.status === 'Aktif'
+      d => d.tipe === tipe && d.status === 'Aktif'
     );
   },
 
