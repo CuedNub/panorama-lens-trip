@@ -1,6 +1,6 @@
 # DATA SOURCE
-VERSI INFO: 1.4.0
-UPDATE TERAKHIR: 2026-05-04
+VERSI INFO: 1.0.0
+UPDATE TERAKHIR: 2025-07-12
 
 ## PENYIMPANAN
 Semua data disimpan di localStorage.
@@ -22,8 +22,6 @@ Semua data disimpan di localStorage.
   - dipakai oleh: pembayaran, hotel booking, driver, piknik
   - relasi: bookingId → plt_booking.id
   - kategori: pembayaran tamu, booking hotel, sewa driver tour, sewa driver jeep, piknik bromo
-  - snapshotDriver field: nama, noHP, kendaraan
-  - snapshotHotel field: nama, destinasi (field harga sudah tidak disimpan di transaksi baru)
 
 ### Data Master
 - plt_master_paket → data master paket tour
@@ -38,21 +36,15 @@ Semua data disimpan di localStorage.
   - getter: Core.getMasterDriver()
   - saver: Core.saveMasterDriver(data)
   - helper: Core.getMasterDriverById(id), Core.getMasterDriverByTipe(tipe)
-  - dipakai oleh: form sewa driver tour, form sewa driver jeep, halaman master driver
-  - field: id, nama, noHP, status
-  - catatan: field kendaraan dan tipe sudah DIHAPUS dari master driver sejak v1.3.0
-  - catatan: getMasterDriverByTipe() sekarang return semua driver aktif tanpa filter tipe
-  - catatan: kendaraan sekarang dipilih per transaksi di form sewa driver
+  - dipakai oleh: form driver tour, form driver jeep, halaman master driver
+  - field: id, nama, noHP, kendaraan, tipe, status
 
 - plt_master_hotel → data master hotel
   - getter: Core.getMasterHotel()
   - saver: Core.saveMasterHotel(data)
   - helper: Core.getMasterHotelById(id), Core.getMasterHotelByDestinasi(dest)
   - dipakai oleh: form hotel booking, halaman master hotel
-  - field aktif di form: id, nama, destinasi
-  - field tersimpan tapi tidak tampil di form: harga, keterangan, status
-  - catatan: field harga, keterangan, status dipertahankan saat edit supaya data lama tidak hilang
-  - catatan: snapshotHotel di transaksi baru tidak lagi menyimpan field harga
+  - field: id, nama, destinasi, harga, keterangan, status
 
 ### Data Daftar (dropdown / checkbox)
 - plt_daftar_destinasi → daftar nama destinasi
@@ -63,7 +55,7 @@ Semua data disimpan di localStorage.
   - bisa tambah manual: ya
   - auto-capitalize: ya
   - cegah duplikat: ya
-  - kelola dari: Pengaturan, form master paket, form master hotel, form hotel booking
+  - kelola dari: Pengaturan, form paket, form hotel master, form hotel booking
   - dipakai oleh: form master paket (checkbox), form master hotel (dropdown), form hotel booking (dropdown)
 
 - plt_daftar_kendaraan → daftar jenis kendaraan
@@ -71,12 +63,10 @@ Semua data disimpan di localStorage.
   - saver: Core.saveDaftarKendaraan(data)
   - helper: Core.tambahKendaraan(nama)
   - data awal: ['Hiace', 'Avanza', 'Innova', 'Jeep', 'Elf']
-  - bisa tambah manual: ya (dari popup di form sewa driver)
+  - bisa tambah manual: ya
   - auto-capitalize: ya
   - cegah duplikat: ya
-  - deteksi mirip: ya (saat tambah kendaraan baru dari popup)
-  - dipakai oleh: form sewa driver tour (dropdown per transaksi)
-  - catatan: sebelumnya dipakai oleh form master driver, sekarang sudah dipindah ke form sewa driver
+  - dipakai oleh: form master driver (dropdown)
 
 ### Data Pengaturan
 - plt_settings → profil & pengaturan aplikasi
@@ -101,7 +91,6 @@ Semua data disimpan di localStorage.
 - plt_booking.paketId → plt_master_paket.id
 - plt_master_hotel.destinasi → plt_daftar_destinasi (nama destinasi)
 - plt_master_paket.destinasi[] → plt_daftar_destinasi (nama destinasi)
-- plt_arus_kas.snapshotDriver.kendaraan → dipilih dari plt_daftar_kendaraan per transaksi
 
 ## MIGRASI DATA
 - migrateBookingData() di core.js
@@ -124,9 +113,3 @@ Semua data disimpan di localStorage.
 - Core.hitungKeuanganBooking(bookingId) → hitung masuk/keluar
 - Core.getStatusBayar(bookingId, totalHarga) → status bayar
 - Core.adaBromo(destinasiList) → cek apakah ada Bromo
-
-## HELPER HOTEL DI ENGINE
-- Engine.getInfoBookingHotel(bookingId) → hitung total malam, hotel diinput, sisa, per destinasi
-- Engine.renderInfoBookingHotel(bookingId) → render HTML info booking hotel
-- Engine.getDestinasiBerikutnya(bookingId) → cari destinasi yang belum ada hotel
-- Engine.cekDuplikatHotel(bookingId, hotelNama, excludeAkId) → cek duplikat hotel di booking

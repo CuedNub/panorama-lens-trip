@@ -1,6 +1,6 @@
 # OVERVIEW APLIKASI
-VERSI INFO: 1.4.0
-UPDATE TERAKHIR: 2026-05-04
+VERSI INFO: 1.1.0
+UPDATE TERAKHIR: 2026-05-02
 
 ## NAMA APLIKASI
 Panorama Lens Trip
@@ -19,7 +19,7 @@ Aplikasi manajemen booking tour travel. Mengelola booking paket tour, hotel, dri
 - js/core.js → fungsi data, helper, migrasi, CRUD daftar
 - js/engine.js → UI, form, render halaman, logika app
 - js/license.js → sistem lisensi
-- js/itinerary.js → masih ada di repo tapi tombol itinerary sudah dihapus dari UI
+- js/itinerary.js → (masih ada tapi tombol itinerary sudah dihapus dari UI)
 - js/data_sync.js → export/import data
 - js/app_update.js → cek update PWA
 - sw.js → service worker PWA
@@ -33,11 +33,6 @@ Aplikasi manajemen booking tour travel. Mengelola booking paket tour, hotel, dri
 - js/engine_backup_step19b.js
 - js/engine_backup_step19c.js
 - js/engine_backup_step20.js
-- js/engine_backup_bugfix.js
-- js/engine_backup_driver.js
-- js/core_backup_driver.js
-- js/engine_backup_hotel.js
-- js/core_backup_hotel.js
 
 ## TEKNOLOGI
 - HTML / CSS / JS murni
@@ -52,15 +47,4 @@ Aplikasi manajemen booking tour travel. Mengelola booking paket tour, hotel, dri
 - Tombol itinerary sudah dihapus dari card booking
 - js/itinerary.js masih ada di repo tapi tidak dipanggil dari UI
 - PWA sudah berhasil diperbaiki dan sekarang bisa diinstal dari GitHub Pages
-
-## PERUBAHAN BESAR TERBARU
-- Master Driver disederhanakan: sekarang fokus ke nama driver, no HP, dan status
-- Kendaraan driver tidak lagi disimpan di master driver, tapi dipilih per transaksi
-- Form Driver Tour diperbarui: dropdown driver, popup tambah driver baru, popup tambah kendaraan baru, biaya dengan kalkulator, tanggal/status bayar hanya muncul jika biaya > 0, keterangan uppercase
-- Form Driver Jeep diperbarui: pola sama seperti Driver Tour, kendaraan readonly Jeep, ada tombol Tambah Jeep untuk simpan lalu buka form baru lagi
-- Form edit Driver Tour dan Driver Jeep sudah disesuaikan dengan alur baru
-- Master Hotel disederhanakan: form hanya fokus ke nama hotel dan destinasi
-- Form transaksi Hotel diubah ke model 1 form = 1 hotel
-- Form Hotel sekarang menampilkan info booking per destinasi, auto pilih destinasi berikutnya, warning duplikat hotel, biaya dengan kalkulator, tanggal/status bayar hanya muncul jika biaya > 0, dan tombol Tambah Hotel
-- Form edit Hotel sudah disesuaikan dengan alur baru
-- Versi aplikasi saat ini: 1.4.0
+- Versi aplikasi saat ini: 1.1.6

@@ -119,3 +119,133 @@ UPDATE TERAKHIR: 2025-07-12
 - Versi final setelah perbaikan PWA: `1.1.6`
 
 ═══════════════════════════════════════
+
+═══════════════════════════════════════
+
+## SESI 3 — 2026-05-03 (v1.3.0)
+
+### Tujuan
+- Modifikasi form Driver Tour dan Driver Jeep
+- Sederhanakan Master Driver
+
+### File yang berubah
+- js/engine.js → modifikasi form driver tour, jeep, master driver
+- js/core.js → update getMasterDriverByTipe agar return semua driver aktif
+
+### Data source yang berubah
+- plt_master_driver → field kendaraan dan tipe DIHAPUS dari form, data lama tetap ada di storage
+- plt_daftar_kendaraan → sekarang dipakai oleh form sewa driver (bukan master driver)
+
+### Form yang berubah
+- Form Master Driver: hapus field kendaraan dan tipe, sisa nama + no HP + status
+- Form Sewa Driver Tour: dropdown driver + popup tambah driver baru, kendaraan dipilih per transaksi + popup tambah kendaraan, biaya format ribuan + kalkulator, tanggal/status show hide, keterangan UPPERCASE
+- Form Sewa Driver Jeep: pola sama seperti Tour, kendaraan readonly JEEP, ada tombol Tambah Jeep
+- Form Edit Driver Tour: diupdate sesuai form baru
+- Form Edit Driver Jeep: diupdate sesuai form baru, ada tombol Tambah Jeep
+
+### UI yang berubah
+- Card Master Driver: hapus tampilan kendaraan, tipe, badge status
+- Halaman Master Driver: hapus tab filter, sisakan search saja
+- Form Driver: tambah popup tambah driver baru dan popup tambah kendaraan baru
+
+### Helper baru di engine.js
+- bukaModal2 / tutupModal2 → popup layer 2 di atas modal utama
+- bukaPopupTambahDriver / simpanPopupDriver → popup tambah driver baru
+- refreshDriverDropdown → refresh dropdown driver setelah tambah baru
+- onSewaDriverSelect → handle pilih driver dari dropdown
+- bukaPopupTambahKendaraan / simpanPopupKendaraan → popup tambah kendaraan baru
+- cekKendaraanMirip → deteksi nama kendaraan mirip
+- refreshKendaraanDropdown → refresh dropdown kendaraan setelah tambah baru
+- onKendaraanSewaChange → handle pilih kendaraan dari dropdown
+- onBiayaDriverChange → show/hide tanggal dan status berdasarkan biaya
+- uppercaseField → uppercase otomatis saat ketik
+
+### Testing yang dilakukan
+- Syntax check: ✅ semua valid
+- Master Driver: ✅ berfungsi
+- Form Sewa Driver Tour: ✅ berfungsi
+- Form Sewa Driver Jeep: ✅ berfungsi + tombol Tambah Jeep berfungsi
+- Form Edit Driver Tour: ✅ berfungsi
+- Form Edit Driver Jeep: ✅ berfungsi + tombol Tambah Jeep berfungsi
+- Popup tambah driver baru: ✅ berfungsi
+- Popup tambah kendaraan baru: ✅ berfungsi
+
+### Status
+- ✅ Selesai
+
+### Catatan
+- Versi dinaikkan dari 1.2.1 ke 1.3.0
+- Sudah push ke GitHub
+- getMasterDriverByTipe sekarang return semua driver aktif tanpa filter tipe
+- Field kendaraan dan tipe masih ada di data master driver lama di storage tapi tidak dipakai lagi
+
+═══════════════════════════════════════
+
+## SESI 4 — 2026-05-04 (v1.4.0)
+
+### Tujuan
+- Modifikasi form Hotel Booking ke model 1 form = 1 hotel
+- Sederhanakan Master Hotel
+- Tambah fitur info booking per destinasi, warning duplikat hotel, auto pilih destinasi berikutnya
+
+### File yang berubah
+- js/engine.js → modifikasi form hotel booking, edit hotel, master hotel
+- js/core.js → tidak ada perubahan logic utama
+
+### Data source yang berubah
+- plt_master_hotel → field harga, keterangan, status tidak lagi tampil di form tapi tetap dipertahankan saat edit
+- plt_arus_kas.snapshotHotel → field harga tidak lagi disimpan di transaksi baru
+
+### Form yang berubah
+- Form Master Hotel: hapus field harga, keterangan, status dari tampilan form
+- Form Hotel Booking: diubah dari model multi-hotel ke 1 form = 1 hotel
+- Form Hotel Booking: tambah info booking per destinasi di atas form
+- Form Hotel Booking: auto pilih destinasi berikutnya yang belum ada hotel
+- Form Hotel Booking: warning jika hotel duplikat di booking yang sama
+- Form Hotel Booking: biaya format ribuan + kalkulator
+- Form Hotel Booking: tanggal + status show/hide berdasarkan biaya
+- Form Hotel Booking: keterangan UPPERCASE
+- Form Hotel Booking: 2 tombol (Simpan dan Tambah Hotel)
+- Form Edit Hotel: diupdate sesuai form baru + 2 tombol (Update dan Tambah Hotel)
+
+### UI yang berubah
+- Card Master Hotel: hapus tampilan harga, keterangan, badge status
+- Halaman Master Hotel: hapus tab filter, sisakan search saja
+- Form Hotel: tampil info booking (total malam, hotel per destinasi, sisa malam)
+
+### Helper baru di engine.js
+- getInfoBookingHotel(bookingId) → hitung total malam, hotel diinput, sisa, per destinasi
+- renderInfoBookingHotel(bookingId) → render HTML info booking hotel
+- getDestinasiBerikutnya(bookingId) → cari destinasi yang belum ada hotel
+- cekDuplikatHotel(bookingId, hotelNama, excludeAkId) → cek duplikat hotel di booking
+- prosesSimanHotel(bookingId, tambahLagi) → proses simpan hotel dengan 2 mode
+- simpanHotelDanTambahLagi(bookingId) → simpan + buka form hotel baru
+- prosesUpdateHotel(arusKasId, bookingId, tambahLagi) → proses update hotel dengan 2 mode
+- updateHotelDanTambahLagi(arusKasId, bookingId) → update + buka form hotel baru
+
+### Fungsi lama yang dihapus
+- renderHotelField() → tidak dipakai lagi (model multi-hotel dihapus)
+- tambahHotelField() → tidak dipakai lagi
+- hapusHotelField() → tidak dipakai lagi
+- filterHotelOptions() → tidak dipakai lagi (field cari hotel dihapus)
+
+### Testing yang dilakukan
+- Syntax check: ✅ semua valid
+- Master Hotel: ✅ berfungsi
+- Form Hotel Booking: ✅ berfungsi
+- Info booking per destinasi: ✅ tampil benar
+- Auto pilih destinasi berikutnya: ✅ berfungsi
+- Warning duplikat hotel: ✅ muncul saat hotel sama dipilih
+- Tombol Tambah Hotel: ✅ simpan + buka form baru
+- Form Edit Hotel: ✅ berfungsi
+- Tombol Tambah Hotel di edit: ✅ berfungsi
+
+### Status
+- ✅ Selesai
+
+### Catatan
+- Versi dinaikkan dari 1.3.0 ke 1.4.0
+- Sudah push ke GitHub
+- snapshotHotel.harga tidak lagi disimpan di transaksi baru
+- Data master hotel lama yang punya field harga/keterangan/status tetap aman
+- Field harga, keterangan, status tetap dipertahankan saat edit master hotel supaya data lama tidak hilang
