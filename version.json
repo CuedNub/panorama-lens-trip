@@ -1,4 +1,4 @@
 {
-  "version": "1.3.0",
-  "notes": "Modifikasi form driver: master driver disederhanakan, form sewa driver tour dan jeep diperbarui, kendaraan dipilih per transaksi, tambah fitur popup driver dan kendaraan baru"
+  "version": "1.4.0",
+  "notes": "Modifikasi form hotel: master hotel disederhanakan, form sewa hotel model 1 form 1 hotel, tambah info booking per destinasi, warning duplikat hotel, auto pilih destinasi berikutnya"
 }

@@ -1268,224 +1268,177 @@ const Engine = {
   // ---------------------------------
   // FORM SEWA HOTEL
   // ---------------------------------
-  // ---------------------------------
-  // HELPER HOTEL
-  // ---------------------------------
-
-  getInfoBookingHotel(bookingId) {
-    var b = Core.getBookingById(bookingId);
-    if (!b) return { durMalam: 0, hotelList: [], perDest: [], sisa: 0 };
-
-    var durMalam = b.snapshotPaket ? Number(b.snapshotPaket.durMalam) || 0 : 0;
-    var hotelList = Core.getArusKasByBookingId(bookingId).filter(function(a) {
-      return a.kategori === 'booking hotel';
-    });
-    var destinasi = b.destinasi || [];
-
-    var perDest = destinasi.map(function(d) {
-      var count = hotelList.filter(function(a) {
-        return a.snapshotHotel && a.snapshotHotel.destinasi === d;
-      }).length;
-      return { nama: d, count: count };
-    });
-
-    var totalHotel = hotelList.length;
-    var sisa = durMalam > 0 ? Math.max(0, durMalam - totalHotel) : 0;
-
-    return {
-      durMalam: durMalam,
-      totalHotel: totalHotel,
-      hotelList: hotelList,
-      perDest: perDest,
-      sisa: sisa
-    };
-  },
-
-  renderInfoBookingHotel(bookingId) {
-    var info = this.getInfoBookingHotel(bookingId);
-    if (info.durMalam === 0) return '';
-
-    var html = '<div class="info-booking-hotel" style="background:#f0f7ff;padding:10px;border-radius:8px;margin-bottom:12px">';
-    html += '<b>📋 Info Booking:</b><br>';
-    html += 'Total malam: ' + info.durMalam + '<br>';
-
-    info.perDest.forEach(function(d) {
-      if (d.count > 0) {
-        html += '🏔️ ' + d.nama + ': ' + d.count + ' hotel ✅<br>';
-      } else {
-        html += '🏔️ ' + d.nama + ': belum ada hotel<br>';
-      }
-    });
-
-    if (info.sisa > 0) {
-      html += '<b>Sisa: ' + info.sisa + ' malam</b>';
-    } else {
-      html += '<b>✅ Semua malam sudah ter-cover</b>';
-    }
-
-    html += '</div>';
-    return html;
-  },
-
-  getDestinasiBerikutnya(bookingId) {
-    var info = this.getInfoBookingHotel(bookingId);
-    var belum = info.perDest.filter(function(d) { return d.count === 0; });
-    if (belum.length > 0) return belum[0].nama;
-    if (info.perDest.length > 0) return info.perDest[0].nama;
-    return '';
-  },
-
-  cekDuplikatHotel(bookingId, hotelNama, excludeAkId) {
-    if (!hotelNama) return false;
-    var hotelList = Core.getArusKasByBookingId(bookingId).filter(function(a) {
-      return a.kategori === 'booking hotel' && a.id !== excludeAkId;
-    });
-    return hotelList.some(function(a) {
-      return a.snapshotHotel && a.snapshotHotel.nama &&
-        a.snapshotHotel.nama.toLowerCase() === hotelNama.toLowerCase();
-    });
-  },
-
-    bukaFormHotel(bookingId) {
+  bukaFormHotel(bookingId) {
     const b = Core.getBookingById(bookingId);
     if (!b) return;
+    const destList = b.destinasi || [];
 
+    const html =
+      '<form onsubmit="Engine.simpanHotel(event,\'' + bookingId +
+        '\')" oninput="Engine.tandaiDirty()">' +
+        '<label>ID Booking</label>' +
+        '<input type="text" value="' + b.id + '" readonly>' +
+        '<label>Nama Tamu</label>' +
+        '<input type="text" value="' + b.namaTamu + '" readonly>' +
+        '<div id="hotelFields">' +
+          this.renderHotelField(1, destList) +
+        '</div>' +
+        '<button type="button" class="btn-tambah" ' +
+          'onclick="Engine.tambahHotelField()">+ Tambah Hotel</button>' +
+        '<button type="submit" class="btn-simpan">Simpan</button>' +
+      '</form>';
+
+    this.bukaModal('🏨 Sewa Hotel', html);
+  },
+
+  renderHotelField(nomor, destList) {
     var allDest = Core.getDaftarDestinasi();
     var merged = allDest.slice();
-    (b.destinasi || []).forEach(function(d) {
+    destList.forEach(function(d) {
       if (merged.indexOf(d) < 0) merged.push(d);
     });
     merged.sort();
 
-    var autoDest = this.getDestinasiBerikutnya(bookingId);
-
-    var opsiDest = '<option value="">Pilih destinasi...</option>';
-    merged.forEach(function(d) {
-      var sel = d === autoDest ? ' selected' : '';
-      opsiDest += '<option value="' + d + '"' + sel + '>' + d + '</option>';
+    let opsiDest = '<option value="">Pilih destinasi...</option>';
+    merged.forEach(d => {
+      opsiDest += '<option value="' + d + '">' + d + '</option>';
     });
     opsiDest += '<option value="__tambahDest">➕ Tambah Destinasi Baru</option>';
 
-    var infoHtml = this.renderInfoBookingHotel(bookingId);
+    let hapusBtn = '';
+    if (nomor > 1) {
+      hapusBtn = '<button type="button" class="btn-hapus" ' +
+        'onclick="Engine.hapusHotelField(' + nomor + ')">🗑️ Hapus</button>';
+    }
 
-    var html =
-      '<form onsubmit="Engine.simpanHotel(event,\'' + bookingId +
-        '\')" oninput="Engine.tandaiDirty()">' +
-        '<input type="hidden" id="fHotelBookingId" value="' + b.id + '">' +
-
-        '<label>Nama Tamu</label>' +
-        '<input type="text" value="' + b.namaTamu + '" readonly>' +
-
-        infoHtml +
-
-        '<label>Destinasi *</label>' +
-        '<select id="fHotelDest1" onchange="Engine.onHotelDestChange(1)" required>' +
-          opsiDest +
+    return '<div class="hotel-field" id="hotelField' + nomor + '">' +
+      '<div class="section-divider">── Hotel ' + nomor + ' ──</div>' +
+      hapusBtn +
+      '<label>Destinasi *</label>' +
+      '<select id="fHotelDest' + nomor + '" ' +
+        'onchange="Engine.onHotelDestChange(' + nomor + ')" required>' +
+        opsiDest +
+      '</select>' +
+      '<input type="text" id="fHotelDestManual' + nomor + '" style="display:none" ' +
+        'placeholder="Ketik nama destinasi baru">' +
+      '<label>Cari Hotel</label>' +
+      '<input type="text" id="fHotelCari' + nomor + '" placeholder="Ketik untuk mencari hotel" ' +
+        'oninput="Engine.filterHotelOptions(' + nomor + ')">' +
+      '<label>Hotel *</label>' +
+      '<select id="fHotelNama' + nomor + '" ' +
+        'onchange="Engine.onHotelNamaChange(' + nomor + ')" required>' +
+        '<option value="">Pilih hotel...</option>' +
+      '</select>' +
+      '<input type="text" id="fHotelNamaManual' + nomor + '" style="display:none" ' +
+        'placeholder="Ketik nama hotel baru">' +
+      '<label>Biaya Booking</label>' +
+      '<input type="text" inputmode="numeric" id="fHotelBiaya' + nomor + '" min="0" placeholder="0" ' +
+        'oninput="Engine.onHotelBiayaChange(' + nomor + ')">' +
+      '<div id="fHotelTglWrap' + nomor + '" style="display:none">' +
+        '<label>Tanggal & Waktu Booking *</label>' +
+        '<input type="datetime-local" id="fHotelTgl' + nomor + '">' +
+      '</div>' +
+      '<div id="fHotelStatusWrap' + nomor + '" style="display:none">' +
+        '<label>Status Pembayaran *</label>' +
+        '<select id="fHotelStatus' + nomor + '">' +
+          '<option value="">Pilih status...</option>' +
+          '<option value="DP">DP</option>' +
+          '<option value="Lunas">Lunas</option>' +
         '</select>' +
-        '<input type="text" id="fHotelDestManual1" style="display:none" placeholder="Ketik nama destinasi baru">' +
+      '</div>' +
+      '<label>Keterangan</label>' +
+      '<input type="text" id="fHotelKet' + nomor +
+        '" placeholder="contoh: 1 kamar, 1 malam">' +
+    '</div>';
+  },
 
-        '<label>Nama Hotel *</label>' +
-        '<select id="fHotelNama1" onchange="Engine.onHotelNamaChange(1)" required>' +
-          '<option value="">Pilih hotel...</option>' +
-        '</select>' +
-        '<input type="text" id="fHotelNamaManual1" style="display:none" placeholder="Ketik nama hotel baru">' +
-        '<div id="fHotelWarning1" style="color:#e65100;font-size:12px;min-height:16px"></div>' +
-
-        '<label>Biaya *</label>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<input type="text" inputmode="numeric" id="fHotelBiaya1" placeholder="0" style="flex:1" ' +
-            'oninput="Engine.onHotelBiayaChange(1)">' +
-          '<button type="button" onclick="Engine.bukaKalkulator(\'fHotelBiaya1\')">🧮</button>' +
-        '</div>' +
-
-        '<div id="fHotelTglWrap1" style="display:none">' +
-          '<label>Tanggal & Waktu Booking *</label>' +
-          '<input type="datetime-local" id="fHotelTgl1">' +
-        '</div>' +
-
-        '<div id="fHotelStatusWrap1" style="display:none">' +
-          '<label>Status Pembayaran *</label>' +
-          '<select id="fHotelStatus1">' +
-            '<option value="">Pilih status...</option>' +
-            '<option value="DP">DP</option>' +
-            '<option value="Lunas">Lunas</option>' +
-          '</select>' +
-        '</div>' +
-
-        '<label>Keterangan</label>' +
-        '<input type="text" id="fHotelKet1" placeholder="contoh: 1 KAMAR, 1 MALAM" ' +
-          'oninput="Engine.uppercaseField(this)">' +
-
-        '<div style="display:flex;gap:12px;margin-top:12px">' +
-          '<button type="submit" class="btn-simpan" style="flex:1">✅ Simpan</button>' +
-          '<button type="button" class="btn-simpan" style="flex:1;background:#2196F3" ' +
-            'onclick="Engine.simpanHotelDanTambahLagi(\'' + bookingId + '\')">🏨 Tambah Hotel</button>' +
-        '</div>' +
-      '</form>';
-
-    this.bukaModal('🏨 Sewa Hotel', html);
-
-    if (autoDest) {
-      this.onHotelDestChange(1);
+  tambahHotelField() {
+    const b = Core.getBookingById(
+      document.querySelector('[id^="fHotelDest"]')
+        .closest('form').querySelector('input[readonly]').value
+    );
+    if (!b) return;
+    this.state.hotelCount++;
+    const container = document.getElementById('hotelFields');
+    if (container) {
+      container.insertAdjacentHTML('beforeend',
+        this.renderHotelField(this.state.hotelCount, b.destinasi || [])
+      );
     }
   },
 
+  hapusHotelField(nomor) {
+    const el = document.getElementById('hotelField' + nomor);
+    if (el) el.remove();
+  },
 
   onHotelDestChange(nomor) {
-    var destSel   = document.getElementById('fHotelDest' + nomor);
-    var destManual = document.getElementById('fHotelDestManual' + nomor);
-    var selHotel  = document.getElementById('fHotelNama' + nomor);
-    var hotelManual = document.getElementById('fHotelNamaManual' + nomor);
-    var warningEl = document.getElementById('fHotelWarning' + nomor);
+    const destSel = document.getElementById('fHotelDest' + nomor);
+    const destManual = document.getElementById('fHotelDestManual' + nomor);
+    const selHotel = document.getElementById('fHotelNama' + nomor);
+    const hotelManual = document.getElementById('fHotelNamaManual' + nomor);
     if (!destSel || !selHotel) return;
 
     if (destSel.value === '__tambahDest') {
       if (destManual) destManual.style.display = 'block';
       selHotel.innerHTML = '<option value="">Pilih hotel...</option>';
-      if (hotelManual) { hotelManual.style.display = 'none'; hotelManual.value = ''; }
-      if (warningEl) warningEl.innerHTML = '';
+      if (hotelManual) hotelManual.style.display = 'none';
       return;
     }
 
     if (destManual) { destManual.style.display = 'none'; destManual.value = ''; }
 
-    var dest = destSel.value;
-    var hotels = Core.getMasterHotelByDestinasi(dest);
-    var opsi = '<option value="">Pilih hotel...</option>';
-    hotels.forEach(function(h) {
-      opsi += '<option value="' + h.id + '">' + h.nama + '</option>';
+    const dest = destSel.value;
+    const hotels = Core.getMasterHotelByDestinasi(dest);
+    let opsi = '<option value="">Pilih hotel...</option>';
+    hotels.forEach(h => {
+      opsi += '<option value="' + h.id + '">' + h.nama +
+        ' (' + Core.formatRupiah(h.harga) + '/malam)</option>';
     });
     opsi += '<option value="__tambahHotel">➕ Tambah Hotel Baru</option>';
     selHotel.innerHTML = opsi;
     if (hotelManual) { hotelManual.style.display = 'none'; hotelManual.value = ''; }
-    if (warningEl) warningEl.innerHTML = '';
   },
 
   onHotelNamaChange(nomor) {
-    var hotelSel  = document.getElementById('fHotelNama' + nomor);
-    var hotelManual = document.getElementById('fHotelNamaManual' + nomor);
-    var warningEl = document.getElementById('fHotelWarning' + nomor);
-    var bookingIdEl = document.getElementById('fHotelBookingId');
-    if (!hotelSel) return;
+    const hotelSel = document.getElementById('fHotelNama' + nomor);
+    const hotelManual = document.getElementById('fHotelNamaManual' + nomor);
+    const biaya = document.getElementById('fHotelBiaya' + nomor);
 
-    if (hotelSel.value === '__tambahHotel') {
+    if (hotelSel && hotelSel.value === '__tambahHotel') {
       if (hotelManual) hotelManual.style.display = 'block';
-      if (warningEl) warningEl.innerHTML = '';
+      if (biaya) biaya.value = '';
       return;
     }
 
     if (hotelManual) { hotelManual.style.display = 'none'; hotelManual.value = ''; }
+    if (!biaya) return;
 
-    var hotel = Core.getMasterHotelById(hotelSel.value);
-    if (!hotel || !warningEl || !bookingIdEl) return;
+    const hotel = Core.getMasterHotelById(hotelSel.value);
+    if (hotel) biaya.value = hotel.harga || 0;
+  },
 
-    var bookingId = bookingIdEl.value;
-    var isDuplikat = Engine.cekDuplikatHotel(bookingId, hotel.nama, null);
-    if (isDuplikat) {
-      warningEl.innerHTML = '⚠️ Hotel ini sudah pernah diinput untuk booking ini.';
-    } else {
-      warningEl.innerHTML = '';
-    }
+  filterHotelOptions(nomor) {
+    var cariEl = document.getElementById('fHotelCari' + nomor);
+    var selHotel = document.getElementById('fHotelNama' + nomor);
+    if (!cariEl || !selHotel) return;
+
+    var keyword = cariEl.value.toUpperCase();
+    var destEl = document.getElementById('fHotelDest' + nomor);
+    if (!destEl || !destEl.value || destEl.value === '__tambahDest') return;
+
+    var hotels = Core.getMasterHotelByDestinasi(destEl.value);
+    var opsi = '<option value="">Pilih hotel...</option>';
+
+    hotels.forEach(function(h) {
+      if (!keyword || h.nama.toUpperCase().indexOf(keyword) >= 0) {
+        opsi += '<option value="' + h.id + '">' + h.nama +
+          ' (' + Core.formatRupiah(h.harga) + '/malam)</option>';
+      }
+    });
+
+    opsi += '<option value="__tambahHotel">➕ Tambah Hotel Baru</option>';
+    selHotel.innerHTML = opsi;
   },
 
   onHotelBiayaChange(nomor) {
@@ -1511,123 +1464,119 @@ const Engine = {
 
   simpanHotel(event, bookingId) {
     event.preventDefault();
-    this.prosesSimanHotel(bookingId, false);
-  },
+    const arusKas = Core.getArusKas();
 
-  simpanHotelDanTambahLagi(bookingId) {
-    this.prosesSimanHotel(bookingId, true);
-  },
+    for (let i = 1; i <= this.state.hotelCount; i++) {
+      const field = document.getElementById('hotelField' + i);
+      if (!field) continue;
 
-  prosesSimanHotel(bookingId, tambahLagi) {
-    var destSel = document.getElementById('fHotelDest1').value;
-    var destManual = document.getElementById('fHotelDestManual1');
-    var htlSel  = document.getElementById('fHotelNama1').value;
-    var htlManual = document.getElementById('fHotelNamaManual1');
-    var biayaEl = document.getElementById('fHotelBiaya1');
-    var tglEl   = document.getElementById('fHotelTgl1');
-    var statusEl = document.getElementById('fHotelStatus1');
-    var ketEl   = document.getElementById('fHotelKet1');
+      var destSel = document.getElementById('fHotelDest' + i).value;
+      var destManual = document.getElementById('fHotelDestManual' + i);
+      var htlSel  = document.getElementById('fHotelNama' + i).value;
+      var htlManual = document.getElementById('fHotelNamaManual' + i);
+      const tgl    = document.getElementById('fHotelTgl' + i).value;
+      const biaya  = Engine.parseRibuan(document.getElementById('fHotelBiaya' + i).value);
+      const status = document.getElementById('fHotelStatus' + i).value;
+      const ket    = document.getElementById('fHotelKet' + i).value.trim();
 
-    var biaya = biayaEl ? Engine.parseRibuan(biayaEl.value) : 0;
-    var tgl   = tglEl ? tglEl.value : '';
-    var status = statusEl ? statusEl.value : '';
-    var ket   = ketEl ? ketEl.value.trim().toUpperCase() : '';
+      var dest = destSel;
+      if (destSel === '__tambahDest') {
+        if (!destManual || !destManual.value.trim()) {
+          alert('Ketik nama destinasi baru untuk Hotel ' + i);
+          return;
+        }
+        var hasilDest = Core.tambahDestinasi(destManual.value.trim());
+        if (!hasilDest.ok) { alert(hasilDest.msg); return; }
+        dest = hasilDest.nama;
+      }
 
-    var dest = destSel;
-    if (destSel === '__tambahDest') {
-      if (!destManual || !destManual.value.trim()) {
-        alert('Ketik nama destinasi baru');
+      var hotel = null;
+      var htlId = htlSel;
+      if (htlSel === '__tambahHotel') {
+        if (!htlManual || !htlManual.value.trim()) {
+          alert('Ketik nama hotel baru untuk Hotel ' + i);
+          return;
+        }
+        var namaHotelBaru = htlManual.value.trim();
+        var newHotelId = Core.generateHotelId();
+        hotel = {
+          id        : newHotelId,
+          nama      : namaHotelBaru,
+          destinasi : dest,
+          harga     : Number(biaya) || 0,
+          keterangan: ket || '',
+          status    : 'Aktif'
+        };
+        var hotelList = Core.getMasterHotel();
+        hotelList.push(hotel);
+        Core.saveMasterHotel(hotelList);
+        htlId = newHotelId;
+      } else {
+        hotel = Core.getMasterHotelById(htlId);
+      }
+
+      if (!dest || (!htlId || htlId === '__tambahHotel')) {
+        alert('Lengkapi destinasi dan hotel untuk Hotel ' + i);
         return;
       }
-      var hasilDest = Core.tambahDestinasi(destManual.value.trim());
-      if (!hasilDest.ok) { alert(hasilDest.msg); return; }
-      dest = hasilDest.nama;
-    }
 
-    var hotel = null;
-    var htlId = htlSel;
-    if (htlSel === '__tambahHotel') {
-      if (!htlManual || !htlManual.value.trim()) {
-        alert('Ketik nama hotel baru');
-        return;
+      var statusFinal = status;
+      var tglFinal = tgl;
+
+      if (biaya > 0) {
+        if (!tgl) {
+          alert('Isi Tanggal & Waktu Booking untuk Hotel ' + i + ' karena biaya sudah diisi');
+          return;
+        }
+        if (!status || status === '') {
+          alert('Pilih Status Pembayaran (DP atau Lunas) untuk Hotel ' + i);
+          return;
+        }
+      } else {
+        statusFinal = 'Belum Bayar';
+        tglFinal = '';
       }
-      var namaHotelBaru = htlManual.value.trim();
-      var newHotelId = Core.generateHotelId();
-      hotel = {
-        id        : newHotelId,
-        nama      : namaHotelBaru,
-        destinasi : dest,
-        harga     : 0,
-        keterangan: '',
-        status    : 'Aktif'
-      };
-      var hotelList = Core.getMasterHotel();
-      hotelList.push(hotel);
-      Core.saveMasterHotel(hotelList);
-      htlId = newHotelId;
-    } else {
-      hotel = Core.getMasterHotelById(htlId);
+
+      arusKas.push({
+        id             : Core.generateArusKasId(),
+        bookingId      : bookingId,
+        jenis          : 'pengeluaran',
+        kategori       : 'booking hotel',
+        jumlah         : Number(biaya) || 0,
+        tanggal        : tglFinal,
+        metode         : '',
+        keterangan     : ket || 'Booking hotel',
+        statusBayar    : statusFinal,
+        snapshotHotel  : hotel ? {
+          nama     : hotel.nama,
+          harga    : hotel.harga,
+          destinasi: hotel.destinasi
+        } : null,
+        snapshotDriver : null
+      });
     }
 
-    if (!dest || (!htlId || htlId === '__tambahHotel')) {
-      alert('Lengkapi destinasi dan hotel');
-      return;
+    var b = Core.getBookingById(bookingId);
+    var durMalam = b && b.snapshotPaket ? Number(b.snapshotPaket.durMalam) || 0 : 0;
+    var jumlahHotel = arusKas.filter(function(a) { return a.bookingId === bookingId && a.kategori === 'booking hotel'; }).length + this.state.hotelCount;
+    var existingHotel = Core.getArusKasByBookingId(bookingId).filter(function(a) { return a.kategori === 'booking hotel'; }).length;
+    var totalHotelSetelahSimpan = existingHotel + this.state.hotelCount;
+
+    if (durMalam > 0 && totalHotelSetelahSimpan < durMalam) {
+      var lanjut = confirm(
+        'Paket tamu ini ' + durMalam + ' malam, tapi data hotel yang kamu isi baru ' + totalHotelSetelahSimpan + '.\n\n' +
+        'Kalau semua malam memang di hotel yang sama, tekan OK untuk simpan.\n' +
+        'Kalau belum lengkap, tekan Batal untuk kembali dan tambah data hotel lagi.\n\n' +
+        '✅ OK = Simpan data hotel sekarang\n' +
+        '❌ Batal = Kembali ke form, belum jadi simpan'
+      );
+      if (!lanjut) return;
     }
-
-    if (hotel && this.cekDuplikatHotel(bookingId, hotel.nama, null)) {
-      if (!confirm('⚠️ Hotel "' + hotel.nama + '" sudah pernah diinput untuk booking ini.\n\nLanjutkan?')) {
-        return;
-      }
-    }
-
-    var statusFinal = status;
-    var tglFinal = tgl;
-
-    if (biaya > 0) {
-      if (!tgl) {
-        alert('Isi Tanggal & Waktu Booking karena biaya sudah diisi');
-        return;
-      }
-      if (!status || status === '') {
-        alert('Pilih Status Pembayaran (DP atau Lunas)');
-        return;
-      }
-    } else {
-      statusFinal = 'Belum Bayar';
-      tglFinal = '';
-    }
-
-    var arusKas = Core.getArusKas();
-    arusKas.push({
-      id             : Core.generateArusKasId(),
-      bookingId      : bookingId,
-      jenis          : 'pengeluaran',
-      kategori       : 'booking hotel',
-      jumlah         : Number(biaya) || 0,
-      tanggal        : tglFinal,
-      metode         : '',
-      keterangan     : ket || 'BOOKING HOTEL',
-      statusBayar    : statusFinal,
-      snapshotHotel  : hotel ? {
-        nama     : hotel.nama,
-        destinasi: hotel.destinasi
-      } : null,
-      snapshotDriver : null
-    });
 
     Core.saveArusKas(arusKas);
     this.state.dirtyForm = false;
-    this.state.expandedBooking = bookingId;
     this.tutupModal();
-
-    if (tambahLagi) {
-      var self = this;
-      setTimeout(function() {
-        self.bukaFormHotel(bookingId);
-      }, 200);
-    } else {
-      this.showHalaman('booking');
-    }
+    this.showHalaman('booking');
   },
 
   // ---------------------------------
@@ -2255,58 +2204,42 @@ const Engine = {
     });
     merged.sort();
 
-    var snap = ak.snapshotHotel || {};
-
-    var opsiDest = '<option value="">Pilih destinasi...</option>';
+    let opsiDest = '<option value="">Pilih destinasi...</option>';
     merged.forEach(function(d) {
-      var sel = snap.destinasi === d ? ' selected' : '';
+      const sel = ak.snapshotHotel && ak.snapshotHotel.destinasi === d ? ' selected' : '';
       opsiDest += '<option value="' + d + '"' + sel + '>' + d + '</option>';
     });
     opsiDest += '<option value="__tambahDest">➕ Tambah Destinasi Baru</option>';
 
-    var hotels = snap.destinasi ? Core.getMasterHotelByDestinasi(snap.destinasi) : [];
-    var opsiHotel = '<option value="">Pilih hotel...</option>';
+    const hotels = ak.snapshotHotel && ak.snapshotHotel.destinasi
+      ? Core.getMasterHotelByDestinasi(ak.snapshotHotel.destinasi) : [];
+    let opsiHotel = '<option value="">Pilih hotel...</option>';
     hotels.forEach(function(h) {
-      var sel = snap.nama === h.nama ? ' selected' : '';
-      opsiHotel += '<option value="' + h.id + '"' + sel + '>' + h.nama + '</option>';
+      const sel = ak.snapshotHotel && ak.snapshotHotel.nama === h.nama ? ' selected' : '';
+      opsiHotel += '<option value="' + h.id + '"' + sel + '>' + h.nama + ' (' + Core.formatRupiah(h.harga) + '/malam)</option>';
     });
     opsiHotel += '<option value="__tambahHotel">➕ Tambah Hotel Baru</option>';
 
-    var showBiaya = (Number(ak.jumlah) || 0) > 0;
+    var showPaidFields = (Number(ak.jumlah) || 0) > 0 ? 'block' : 'none';
     var biayaView = Engine.formatRibuan(ak.jumlah || 0);
-    var infoHtml = this.renderInfoBookingHotel(ak.bookingId);
 
-    var html =
+    const html =
       '<form onsubmit="Engine.updateHotel(event,\'' + ak.id + '\',\'' + ak.bookingId + '\')">' +
-        '<input type="hidden" id="fHotelBookingId" value="' + b.id + '">' +
-
-        '<label>Nama Tamu</label>' +
-        '<input type="text" value="' + b.namaTamu + '" readonly>' +
-
-        infoHtml +
-
         '<label>Destinasi *</label>' +
         '<select id="fHotelDest1" onchange="Engine.onHotelDestChange(1)" required>' + opsiDest + '</select>' +
         '<input type="text" id="fHotelDestManual1" style="display:none" placeholder="Ketik nama destinasi baru">' +
-
-        '<label>Nama Hotel *</label>' +
+        '<label>Cari Hotel</label>' +
+        '<input type="text" id="fHotelCari1" placeholder="Ketik untuk mencari hotel" oninput="Engine.filterHotelOptions(1)">' +
+        '<label>Hotel *</label>' +
         '<select id="fHotelNama1" onchange="Engine.onHotelNamaChange(1)" required>' + opsiHotel + '</select>' +
         '<input type="text" id="fHotelNamaManual1" style="display:none" placeholder="Ketik nama hotel baru">' +
-        '<div id="fHotelWarning1" style="color:#e65100;font-size:12px;min-height:16px"></div>' +
-
-        '<label>Biaya *</label>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<input type="text" inputmode="numeric" id="fHotelBiaya1" value="' + biayaView + '" ' +
-            'placeholder="0" style="flex:1" oninput="Engine.onHotelBiayaChange(1)">' +
-          '<button type="button" onclick="Engine.bukaKalkulator(\'fHotelBiaya1\')">🧮</button>' +
-        '</div>' +
-
-        '<div id="fHotelTglWrap1" style="display:' + (showBiaya ? 'block' : 'none') + '">' +
+        '<label>Biaya Booking</label>' +
+        '<input type="text" inputmode="numeric" id="fHotelBiaya1" min="0" value="' + biayaView + '" oninput="Engine.onHotelBiayaChange(1)">' +
+        '<div id="fHotelTglWrap1" style="display:' + showPaidFields + '">' +
           '<label>Tanggal & Waktu Booking *</label>' +
           '<input type="datetime-local" id="fHotelTgl1" value="' + (ak.tanggal || '') + '">' +
         '</div>' +
-
-        '<div id="fHotelStatusWrap1" style="display:' + (showBiaya ? 'block' : 'none') + '">' +
+        '<div id="fHotelStatusWrap1" style="display:' + showPaidFields + '">' +
           '<label>Status Pembayaran *</label>' +
           '<select id="fHotelStatus1">' +
             '<option value="">Pilih status...</option>' +
@@ -2314,43 +2247,23 @@ const Engine = {
             '<option value="Lunas"' + (ak.statusBayar === 'Lunas' ? ' selected' : '') + '>Lunas</option>' +
           '</select>' +
         '</div>' +
-
         '<label>Keterangan</label>' +
-        '<input type="text" id="fHotelKet1" value="' + (ak.keterangan || '') + '" ' +
-          'oninput="Engine.uppercaseField(this)">' +
-
-        '<div style="display:flex;gap:12px;margin-top:12px">' +
-          '<button type="submit" class="btn-simpan" style="flex:1">✅ Update</button>' +
-          '<button type="button" class="btn-simpan" style="flex:1;background:#2196F3" ' +
-            'onclick="Engine.updateHotelDanTambahLagi(\'' + ak.id + '\',\'' + ak.bookingId + '\')">🏨 Tambah Hotel</button>' +
-        '</div>' +
+        '<input type="text" id="fHotelKet1" value="' + (ak.keterangan || '') + '">' +
+        '<button type="submit" class="btn-simpan">Update Hotel</button>' +
       '</form>';
     this.bukaModal('✏️ Edit Hotel', html);
   },
 
   updateHotel(event, arusKasId, bookingId) {
     event.preventDefault();
-    this.prosesUpdateHotel(arusKasId, bookingId, false);
-  },
-
-  updateHotelDanTambahLagi(arusKasId, bookingId) {
-    this.prosesUpdateHotel(arusKasId, bookingId, true);
-  },
-
-  prosesUpdateHotel(arusKasId, bookingId, tambahLagi) {
-    var destSel   = document.getElementById('fHotelDest1').value;
-    var destManual = document.getElementById('fHotelDestManual1');
-    var htlSel    = document.getElementById('fHotelNama1').value;
-    var htlManual = document.getElementById('fHotelNamaManual1');
-    var biayaEl   = document.getElementById('fHotelBiaya1');
-    var tglEl     = document.getElementById('fHotelTgl1');
-    var statusEl  = document.getElementById('fHotelStatus1');
-    var ketEl     = document.getElementById('fHotelKet1');
-
-    var biaya  = biayaEl ? Engine.parseRibuan(biayaEl.value) : 0;
-    var tgl    = tglEl ? tglEl.value : '';
-    var status = statusEl ? statusEl.value : '';
-    var ket    = ketEl ? ketEl.value.trim().toUpperCase() : '';
+    const destSel = document.getElementById('fHotelDest1').value;
+    const destManual = document.getElementById('fHotelDestManual1');
+    const htlSel  = document.getElementById('fHotelNama1').value;
+    const htlManual = document.getElementById('fHotelNamaManual1');
+    const tgl    = document.getElementById('fHotelTgl1').value;
+    const biaya  = Engine.parseRibuan(document.getElementById('fHotelBiaya1').value);
+    const status = document.getElementById('fHotelStatus1').value;
+    const ket    = document.getElementById('fHotelKet1').value.trim();
 
     var dest = destSel;
     if (destSel === '__tambahDest') {
@@ -2359,7 +2272,10 @@ const Engine = {
         return;
       }
       var hasilDest = Core.tambahDestinasi(destManual.value.trim());
-      if (!hasilDest.ok) { alert(hasilDest.msg); return; }
+      if (!hasilDest.ok) {
+        alert(hasilDest.msg);
+        return;
+      }
       dest = hasilDest.nama;
     }
 
@@ -2376,8 +2292,8 @@ const Engine = {
         id        : newHotelId,
         nama      : namaHotelBaru,
         destinasi : dest,
-        harga     : 0,
-        keterangan: '',
+        harga     : Number(biaya) || 0,
+        keterangan: ket || '',
         status    : 'Aktif'
       };
       var hotelList = Core.getMasterHotel();
@@ -2391,12 +2307,6 @@ const Engine = {
     if (!dest || (!htlId || htlId === '__tambahHotel')) {
       alert('Lengkapi destinasi dan hotel');
       return;
-    }
-
-    if (hotel && this.cekDuplikatHotel(bookingId, hotel.nama, arusKasId)) {
-      if (!confirm('⚠️ Hotel "' + hotel.nama + '" sudah pernah diinput untuk booking ini.\n\nLanjutkan?')) {
-        return;
-      }
     }
 
     var statusFinal = status;
@@ -2416,29 +2326,37 @@ const Engine = {
       tglFinal = '';
     }
 
-    var arusKas = Core.getArusKas();
-    var idx = arusKas.findIndex(function(a) { return a.id === arusKasId; });
+    const arusKas = Core.getArusKas();
+    const idx = arusKas.findIndex(a => a.id === arusKasId);
     if (idx < 0) { alert('Data tidak ditemukan'); return; }
 
     arusKas[idx].jumlah      = Number(biaya) || 0;
     arusKas[idx].tanggal     = tglFinal;
-    arusKas[idx].keterangan  = ket || 'BOOKING HOTEL';
+    arusKas[idx].keterangan  = ket || 'Booking hotel';
     arusKas[idx].statusBayar = statusFinal;
     arusKas[idx].snapshotHotel = hotel ? {
-      nama     : hotel.nama,
-      destinasi: hotel.destinasi
+      nama: hotel.nama, harga: hotel.harga, destinasi: hotel.destinasi
     } : arusKas[idx].snapshotHotel;
 
     Core.saveArusKas(arusKas);
-    this.state.expandedBooking = bookingId;
-    this.tutupModal();
 
-    if (tambahLagi) {
+    if (kategori === 'sewa driver jeep') {
+      this.tutupModal();
+      this.state.expandedBooking = bookingId;
       var self = this;
       setTimeout(function() {
-        self.bukaFormHotel(bookingId);
+        var konfHtml =
+          '<div style="text-align:center;padding:16px">' +
+            '<p style="font-size:16px;margin-bottom:16px">Data jeep berhasil diupdate.<br>Tambah jeep lagi?</p>' +
+            '<div style="display:flex;gap:12px;justify-content:center">' +
+              '<button class="btn-simpan" onclick="Engine.tutupModal();Engine.bukaFormDriverJeep(\'' + bookingId + '\')">🚙 Tambah Jeep</button>' +
+              '<button class="btn-batal" onclick="Engine.tutupModal();Engine.state.expandedBooking=\'' + bookingId + '\';Engine.showHalaman(\'booking\')">✅ Simpan</button>' +
+            '</div>' +
+          '</div>';
+        self.bukaModal('🚙 Driver Jeep', konfHtml);
       }, 200);
     } else {
+      this.tutupModal();
       this.showHalaman('booking');
     }
   },
@@ -3039,11 +2957,19 @@ const Engine = {
   // HALAMAN MASTER HOTEL
   // ---------------------------------
   renderMasterHotel(konten) {
+    const filter = this.state.filterMaster.hotel || 'Semua';
     const searchInput = this.state.filterMaster.draftSearchHotel || '';
     const search = (this.state.filterMaster.searchHotel || '').toLowerCase();
     let data = Core.getMasterHotel();
 
+    if (filter !== 'Semua') data = data.filter(h => h.status === filter);
     if (search) data = data.filter(h => h.nama.toLowerCase().includes(search));
+
+    const tabs = ['Semua','Aktif','Nonaktif'];
+    let tabsHtml = tabs.map(t =>
+      '<button class="tab' + (filter === t ? ' aktif' : '') +
+      '" onclick="Engine.setFilterMaster(\'hotel\',\'' + t + '\')">' + t + '</button>'
+    ).join('');
 
     let cardsHtml = '';
     if (data.length === 0) {
@@ -3057,25 +2983,29 @@ const Engine = {
       '<div class="search-bar">' +
         '<input type="text" placeholder="Cari nama hotel..." ' +
         'value="' + searchInput + '" ' +
-        'oninput="Engine.setDraftSearchMaster(' + "'draftSearchHotel'" + ',this.value)">' +
-        '<button type="button" onclick="Engine.applySearchMaster(' + "'draftSearchHotel','searchHotel'" + ')">🔍</button>' +
+        'oninput="Engine.setDraftSearchMaster(\'draftSearchHotel\',this.value)">' +
+        '<button type="button" onclick="Engine.applySearchMaster(\'draftSearchHotel\',\'searchHotel\')">🔍</button>' +
       '</div>' +
+      '<div class="tabs">' + tabsHtml + '</div>' +
       '<div id="listMaster">' + cardsHtml + '</div>' +
       '<button class="fab" onclick="Engine.bukaFormMasterHotel()">+</button>';
   },
 
   renderCardMasterHotel(h) {
     const exp = this.state.filterMaster.expandHotel === h.id;
-    let html = '<div class="card-master" onclick="Engine.toggleExpandMaster(' + "'expandHotel','" + h.id + "')" + '">' +
-      '<div class="card-header"><span>' + h.id + '</span></div>' +
+    let html = '<div class="card-master" onclick="Engine.toggleExpandMaster(\'expandHotel\',\'' + h.id + '\')">' +
+      '<div class="card-header"><span>' + h.id + '</span>' +
+        '<span class="badge ' + (h.status === 'Aktif' ? 'badge-hijau' : 'badge-abu') + '">' + h.status + '</span></div>' +
       '<div class="card-info">' + h.nama + '<br>' +
-        '📍 ' + h.destinasi + '</div>';
+        '📍 ' + h.destinasi + '<br>' +
+        '💰 ' + Core.formatRupiah(h.harga) + ' / malam</div>';
 
     if (exp) {
       html += '<div class="card-detail" onclick="event.stopPropagation()">' +
+        (h.keterangan ? '<div>📝 ' + h.keterangan + '</div>' : '') +
         '<div class="card-actions">' +
-          '<button onclick="Engine.bukaFormMasterHotel(' + "'" + h.id + "'" + ')">✏️ Edit</button>' +
-          '<button onclick="Engine.hapusMasterHotel(' + "'" + h.id + "'" + ')">🗑️ Hapus</button>' +
+          '<button onclick="Engine.bukaFormMasterHotel(\'' + h.id + '\')">✏️ Edit</button>' +
+          '<button onclick="Engine.hapusMasterHotel(\'' + h.id + '\')">🗑️ Hapus</button>' +
         '</div></div>';
     }
     html += '</div>';
@@ -3816,6 +3746,17 @@ const Engine = {
         '<label>Lokasi / Destinasi *</label>' +
         '<select id="fHotelDestM" onchange="Engine.onDestMasterChange()" required>' + destOptions + '</select>' +
         '<input type="text" id="fHotelDestManual" style="display:none" placeholder="Ketik nama destinasi baru">' +
+        '<label>Harga Standar / Malam *</label>' +
+        '<input type="text" inputmode="numeric" id="fHotelHargaM" min="0" required placeholder="0" ' +
+          'value="' + (isEdit ? hotel.harga : '') + '">' +
+        '<label>Keterangan</label>' +
+        '<input type="text" id="fHotelKetM" placeholder="contoh: View Bromo, breakfast 2 orang" ' +
+          'value="' + (isEdit ? (hotel.keterangan || '') : '') + '">' +
+        '<label>Status *</label>' +
+        '<select id="fHotelStatusM" required>' +
+          '<option value="Aktif"' + (isEdit && hotel.status === 'Aktif' ? ' selected' : '') + '>Aktif</option>' +
+          '<option value="Nonaktif"' + (isEdit && hotel.status === 'Nonaktif' ? ' selected' : '') + '>Nonaktif</option>' +
+        '</select>' +
         '<button type="submit" class="btn-simpan">Simpan</button>' +
       '</form>';
 
@@ -3833,11 +3774,13 @@ const Engine = {
 
   simpanMasterHotel(event, editId) {
     event.preventDefault();
-    var isEdit  = !!editId;
-    var hotel   = isEdit ? Core.getMasterHotelById(editId) : null;
-    var nama    = document.getElementById('fHotelNamaM').value.trim();
+    var isEdit = !!editId;
+    var nama   = document.getElementById('fHotelNamaM').value.trim();
     var destSel = document.getElementById('fHotelDestM').value;
     var destManual = document.getElementById('fHotelDestManual').value.trim();
+    var harga  = Engine.parseRibuan(document.getElementById('fHotelHargaM').value);
+    var ket    = document.getElementById('fHotelKetM').value.trim();
+    var status = document.getElementById('fHotelStatusM').value;
 
     var dest = destSel;
     if (destSel === '__tambahDest') {
@@ -3853,7 +3796,7 @@ const Engine = {
       dest = hasil.nama;
     }
 
-    if (!nama || !dest) {
+    if (!nama || !dest || !harga) {
       alert('Lengkapi semua field bertanda *');
       return;
     }
@@ -3862,9 +3805,9 @@ const Engine = {
       id        : isEdit ? editId : Core.generateHotelId(),
       nama      : nama,
       destinasi : dest,
-      harga     : isEdit && hotel ? (hotel.harga || 0) : 0,
-      keterangan: isEdit && hotel ? (hotel.keterangan || '') : '',
-      status    : isEdit && hotel ? (hotel.status || 'Aktif') : 'Aktif'
+      harga     : Number(harga),
+      keterangan: ket,
+      status    : status
     };
 
     var list = Core.getMasterHotel();

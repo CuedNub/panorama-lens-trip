@@ -4,7 +4,7 @@
   FUNGSI  : Service worker, cache offline, handle update PWA
 */
 
-const CACHE_NAME = 'plt-cache-v1.3.0';
+const CACHE_NAME = 'plt-cache-v1.4.0';
 
 const ASSETS = [
   './',
